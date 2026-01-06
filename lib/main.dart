@@ -1,20 +1,30 @@
 import 'package:flutter/material.dart';
+import 'config/theme.dart';
+import 'screens/landing_page.dart';
+import 'package:device_preview/device_preview.dart';
 
 void main() {
-  runApp(const MainApp());
+  runApp(
+    DevicePreview(
+      enabled: true, // Set to false untuk disable device preview
+      builder: (context) => const DatukApp(),
+    ),
+  );
 }
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+class DatukApp extends StatelessWidget {
+  const DatukApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Hello World!'),
-        ),
-      ),
+    return MaterialApp(
+      title: 'Datuk App',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode:
+          ThemeMode.light, // Change to ThemeMode.system for auto dark mode
+      home: const LandingPage(),
     );
   }
 }
