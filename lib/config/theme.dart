@@ -12,7 +12,6 @@ class AppTheme {
       primary: AppColors.primary,
       secondary: AppColors.primaryDark,
       surface: AppColors.surfaceLight,
-      background: AppColors.backgroundLight,
     ),
     textTheme: GoogleFonts.plusJakartaSansTextTheme(),
     appBarTheme: const AppBarTheme(
@@ -30,7 +29,6 @@ class AppTheme {
       primary: AppColors.primary,
       secondary: AppColors.primaryDark,
       surface: AppColors.surfaceDark,
-      background: AppColors.backgroundDark,
     ),
     textTheme: GoogleFonts.plusJakartaSansTextTheme(ThemeData.dark().textTheme),
     appBarTheme: const AppBarTheme(

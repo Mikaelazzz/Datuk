@@ -73,8 +73,8 @@ class _HeroSectionState extends State<HeroSection> {
                           end: Alignment.bottomCenter,
                           colors: [
                             Colors.transparent,
-                            Colors.black.withOpacity(0.1),
-                            Colors.black.withOpacity(0.7),
+                            Colors.black.withValues(alpha: 0.1),
+                            Colors.black.withValues(alpha: 0.7),
                           ],
                           stops: const [0.0, 0.5, 1.0],
                         ),
@@ -101,7 +101,7 @@ class _HeroSectionState extends State<HeroSection> {
                             Text(
                               'Let Datuk listen, analyze, and guide you to a simpler understanding.',
                               style: AppTextStyles.bodyLarge.copyWith(
-                                color: Colors.white.withOpacity(0.9),
+                                color: Colors.white.withValues(alpha: 0.9),
                               ),
                               textAlign: TextAlign.center,
                               maxLines: 2,

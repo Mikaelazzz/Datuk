@@ -5,6 +5,7 @@ import '../widgets/custom_app_bar.dart';
 import '../widgets/hero_section.dart';
 import '../widgets/step_card.dart';
 import '../widgets/floating_cta_button.dart';
+import 'dashboard_screen.dart';
 
 /// Main landing page for the Datuk app
 class LandingPage extends StatelessWidget {
@@ -40,7 +41,7 @@ class LandingPage extends StatelessWidget {
                         child: Container(
                           height: 1,
                           color: isDark
-                              ? Colors.white.withOpacity(0.1)
+                              ? Colors.white.withValues(alpha: 0.1)
                               : AppColors.gray200,
                         ),
                       ),
@@ -50,7 +51,7 @@ class LandingPage extends StatelessWidget {
                           'HOW IT WORKS',
                           style: AppTextStyles.labelBold.copyWith(
                             color: isDark
-                                ? AppColors.primary.withOpacity(0.8)
+                                ? AppColors.primary.withValues(alpha: 0.8)
                                 : AppColors.secondaryText,
                           ),
                         ),
@@ -59,7 +60,7 @@ class LandingPage extends StatelessWidget {
                         child: Container(
                           height: 1,
                           color: isDark
-                              ? Colors.white.withOpacity(0.1)
+                              ? Colors.white.withValues(alpha: 0.1)
                               : AppColors.gray200,
                         ),
                       ),
@@ -79,12 +80,14 @@ class LandingPage extends StatelessWidget {
                         description:
                             'Just speak naturally. We\'re listening without judgment.',
                         stepNumber: 'Step 1',
-                        iconBackgroundColor: AppColors.primary.withOpacity(0.2),
+                        iconBackgroundColor: AppColors.primary.withValues(
+                          alpha: 0.2,
+                        ),
                         iconColor: isDark
                             ? AppColors.primary
                             : AppColors.primaryDark,
-                        badgeBackgroundColor: AppColors.primary.withOpacity(
-                          0.1,
+                        badgeBackgroundColor: AppColors.primary.withValues(
+                          alpha: 0.1,
                         ),
                         badgeTextColor: AppColors.secondaryText,
                       ),
@@ -98,13 +101,13 @@ class LandingPage extends StatelessWidget {
                             'Datuk processes your thoughts instantly to find patterns.',
                         stepNumber: 'Step 2',
                         iconBackgroundColor: isDark
-                            ? AppColors.blue900.withOpacity(0.3)
+                            ? AppColors.blue900.withValues(alpha: 0.3)
                             : AppColors.blue100,
                         iconColor: isDark
                             ? AppColors.blue400
                             : AppColors.blue600,
                         badgeBackgroundColor: isDark
-                            ? AppColors.blue900.withOpacity(0.3)
+                            ? AppColors.blue900.withValues(alpha: 0.3)
                             : AppColors.blue50,
                         badgeTextColor: isDark
                             ? AppColors.blue300
@@ -120,13 +123,13 @@ class LandingPage extends StatelessWidget {
                             'Get clear, actionable insights to improve your day.',
                         stepNumber: 'Step 3',
                         iconBackgroundColor: isDark
-                            ? AppColors.purple900.withOpacity(0.3)
+                            ? AppColors.purple900.withValues(alpha: 0.3)
                             : AppColors.purple100,
                         iconColor: isDark
                             ? AppColors.purple400
                             : AppColors.purple600,
                         badgeBackgroundColor: isDark
-                            ? AppColors.purple900.withOpacity(0.3)
+                            ? AppColors.purple900.withValues(alpha: 0.3)
                             : AppColors.purple50,
                         badgeTextColor: isDark
                             ? AppColors.purple300
@@ -145,11 +148,11 @@ class LandingPage extends StatelessWidget {
           // Floating CTA Button
           FloatingCtaButton(
             onPressed: () {
-              // Handle CTA button press
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Starting your session...'),
-                  duration: Duration(seconds: 2),
+              // Navigate to Dashboard
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const DashboardScreen(),
                 ),
               );
             },
