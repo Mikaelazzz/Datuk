@@ -5,6 +5,8 @@ import '../widgets/dashboard/status_card.dart';
 import '../widgets/dashboard/diagnose_button.dart';
 import '../widgets/dashboard/history_item.dart';
 import '../widgets/dashboard/bottom_nav_bar.dart';
+import '../widgets/dashboard/audio_input_sheet.dart';
+import '../services/audio_service.dart';
 
 /// Dashboard screen - main screen after starting session
 class DashboardScreen extends StatefulWidget {
@@ -16,6 +18,55 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedNavIndex = 0;
+
+  /// Show audio input options (Record or Upload)
+  void _showAudioInputOptions(BuildContext context) {
+    AudioInputSheet.show(
+      context,
+      onRecordTap: () {
+        // Handle record action
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Memulai perekaman batuk...'),
+            backgroundColor: Color(0xFF42f099),
+            duration: Duration(seconds: 2),
+          ),
+        );
+        // TODO: Implement recording functionality
+      },
+      onUploadTap: () async {
+        // Handle upload action
+        final filePath = await AudioService.pickAudioFile(context);
+        if (filePath != null) {
+          if (!AudioService.isValidAudioFormat(filePath)) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Format file tidak didukung. Gunakan MP3, WAV, atau M4A.',
+                  ),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+            return;
+          }
+
+          final fileName = AudioService.getFileName(filePath);
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('File "$fileName" berhasil dipilih'),
+                backgroundColor: const Color(0xFF42f099),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+          // TODO: Process the audio file for diagnosis
+        }
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,14 +98,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     child: Center(
                       child: DiagnoseButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Memulai diagnosa...'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        },
+                        onPressed: () => _showAudioInputOptions(context),
                       ),
                     ),
                   ),
