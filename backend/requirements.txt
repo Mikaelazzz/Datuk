@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+python-multipart
+tensorflow
+librosa
+soundfile
+numpy
+pillow
+matplotlib
+requests

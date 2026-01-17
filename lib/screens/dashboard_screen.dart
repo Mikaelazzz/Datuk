@@ -7,6 +7,7 @@ import '../widgets/dashboard/history_item.dart';
 import '../widgets/dashboard/bottom_nav_bar.dart';
 import '../widgets/dashboard/audio_input_sheet.dart';
 import '../services/audio_service.dart';
+import '../services/api_service.dart';
 
 /// Dashboard screen - main screen after starting session
 class DashboardScreen extends StatefulWidget {
@@ -62,7 +63,125 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             );
           }
-          // TODO: Process the audio file for diagnosis
+          // Show loading snackbar
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Menganalisis audio...'),
+                backgroundColor: Colors.blue,
+                duration: Duration(seconds: 1),
+              ),
+            );
+          }
+
+          try {
+            final result = await ApiService.predictCough(filePath);
+            
+
+            if (context.mounted) {
+              // Show result dialog
+              showDialog(
+                context: context,
+                builder: (context) {
+                  final recommendations = result['recommendations'] as List?;
+                  
+                  return AlertDialog(
+                    title: const Text('Hasil Analisis'),
+                    content: SizedBox(
+                      width: double.maxFinite,
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Result Section
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: (result['prediction'] == 'Batuk berdahak') 
+                                    ? Colors.orange.withValues(alpha: 0.1)
+                                    : Colors.blue.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Jenis Batuk:', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                                  Text(
+                                    result['prediction'],
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 20,
+                                      color: (result['prediction'] == 'Batuk berdahak') 
+                                          ? Colors.orange[800]
+                                          : Colors.blue[800],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text('Akurasi: ${(result['confidence'] * 100).toStringAsFixed(1)}%'),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            
+                            // Recommendations Section
+                            if (recommendations != null && recommendations.isNotEmpty) ...[
+                              const Text(
+                                'Rekomendasi Obat (RAG):',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                              const SizedBox(height: 8),
+                              ...recommendations.map((med) => Card(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                elevation: 0,
+                                color: Colors.grey[100],
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        med['name'],
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                      ),
+                                      Text(med['description'], style: const TextStyle(fontSize: 12)),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Dosis: ${med['dose']}',
+                                        style: TextStyle(fontSize: 11, color: Colors.grey[700], fontStyle: FontStyle.italic),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )),
+                            ],
+                            
+                            const SizedBox(height: 16),
+                            Text('File: ${result['file']}', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                          ],
+                        ),
+                      ),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Tutup'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            }
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Error: $e'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
         }
       },
     );
