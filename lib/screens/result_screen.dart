@@ -5,14 +5,16 @@ import '../constants/text_styles.dart';
 /// Diagnostic Result Screen - shows the diagnosis result after AI processing
 class ResultScreen extends StatelessWidget {
   final String diagnosisType;
+  final String diagnosisSubtitle;
   final String diagnosisDescription;
   final int accuracyPercent;
 
   const ResultScreen({
     super.key,
     this.diagnosisType = 'Batuk Kering',
+    this.diagnosisSubtitle = '(Dry Cough)',
     this.diagnosisDescription =
-        'Batuk ini tidak menghasilkan dahak. Sering disebabkan oleh iritasi, alergi, atau tahap awal infeksi virus.',
+        'Batuk jenis ini tidak menghasilkan dahak atau lendir. Sering disebabkan oleh iritasi tenggorokan, alergi, atau tahap awal infeksi virus ringan.',
     this.accuracyPercent = 94,
   });
 
@@ -40,13 +42,20 @@ class ResultScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        const SizedBox(height: 16),
+
                         // Diagnosis Card
                         _buildDiagnosisCard(isDark),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 32),
 
                         // Recommendations Section
-                        _buildRecommendationsSection(isDark),
+                        _buildRecommendationsSection(context, isDark),
+
+                        const SizedBox(height: 16),
+
+                        // Warning Box
+                        _buildWarningBox(isDark),
 
                         // Bottom spacing for footer buttons
                         const SizedBox(height: 160),
@@ -67,7 +76,7 @@ class ResultScreen extends StatelessWidget {
 
   Widget _buildHeader(BuildContext context, bool isDark) {
     return Padding(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -78,15 +87,13 @@ class ResultScreen extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : Colors.black.withValues(alpha: 0.05),
+                color: Colors.transparent,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.arrow_back_ios_new,
                 color: isDark ? AppColors.lightText : AppColors.darkText,
-                size: 18,
+                size: 20,
               ),
             ),
           ),
@@ -111,15 +118,13 @@ class ResultScreen extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : Colors.black.withValues(alpha: 0.05),
+                color: Colors.transparent,
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                Icons.share,
+                Icons.ios_share,
                 color: isDark ? AppColors.lightText : AppColors.darkText,
-                size: 18,
+                size: 20,
               ),
             ),
           ),
@@ -133,7 +138,7 @@ class ResultScreen extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark
               ? Colors.white.withValues(alpha: 0.05)
@@ -151,8 +156,8 @@ class ResultScreen extends StatelessWidget {
         children: [
           // Background decoration
           Positioned(
-            right: -40,
-            top: -40,
+            right: -32,
+            top: -32,
             child: Container(
               width: 160,
               height: 160,
@@ -165,106 +170,123 @@ class ResultScreen extends StatelessWidget {
 
           // Content
           Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Icon with accuracy badge
-              Stack(
-                clipBehavior: Clip.none,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: AppColors.primary.withValues(alpha: 0.05),
-                        width: 4,
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.sick,
-                      size: 48,
-                      color: AppColors.primaryDark,
+                  // Left: Accuracy badge and title
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Accuracy badge
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.verified,
+                                size: 14,
+                                color: AppColors.primaryDark,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                '$accuracyPercent% Akurasi',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primaryDark,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // Diagnosis title
+                        Text(
+                          diagnosisType,
+                          style: AppTextStyles.headingLarge.copyWith(
+                            fontSize: 28,
+                            color: isDark
+                                ? AppColors.lightText
+                                : AppColors.darkText,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+
+                        // Subtitle
+                        Text(
+                          diagnosisSubtitle,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.gray400,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
 
-                  // Accuracy badge
-                  Positioned(
-                    bottom: -12,
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? const Color(0xFF14532D).withValues(alpha: 0.5)
-                              : const Color(0xFFDCFCE7),
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(
-                            color: isDark
-                                ? const Color(0xFF166534)
-                                : const Color(0xFFBBF7D0),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.verified,
-                              size: 14,
-                              color: isDark
-                                  ? const Color(0xFF4ADE80)
-                                  : const Color(0xFF15803D),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '$accuracyPercent% AKURAT',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: isDark
-                                    ? const Color(0xFF4ADE80)
-                                    : const Color(0xFF15803D),
-                              ),
-                            ),
-                          ],
-                        ),
+                  // Right: Icon
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [const Color(0xFF98FFD8), AppColors.primary],
                       ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
+                    transform: Matrix4.rotationZ(0.05),
+                    child: const Icon(Icons.air, size: 32, color: Colors.white),
                   ),
                 ],
               ),
 
-              const SizedBox(height: 24),
-
-              // Diagnosis title
-              Text(
-                diagnosisType,
-                style: AppTextStyles.headingLarge.copyWith(
-                  color: isDark ? AppColors.lightText : AppColors.darkText,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              // Diagnosis description
-              Text(
-                diagnosisDescription,
-                textAlign: TextAlign.center,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.gray400,
-                  height: 1.5,
-                ),
-              ),
-
               const SizedBox(height: 20),
 
-              // Audio player
-              _buildAudioPlayer(isDark),
+              // Description box
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.backgroundDark.withValues(alpha: 0.5)
+                      : AppColors.backgroundLight,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.05)
+                        : AppColors.gray100,
+                  ),
+                ),
+                child: Text(
+                  diagnosisDescription,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: isDark ? AppColors.gray400 : AppColors.gray500,
+                    height: 1.6,
+                  ),
+                ),
+              ),
             ],
           ),
         ],
@@ -272,96 +294,14 @@ class ResultScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAudioPlayer(bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isDark
-            ? Colors.black.withValues(alpha: 0.2)
-            : const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.05)
-              : const Color(0xFFF3F4F6),
-        ),
-      ),
-      child: Row(
-        children: [
-          // Play button
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: const Icon(Icons.play_arrow, color: Colors.white, size: 20),
-          ),
-
-          const SizedBox(width: 12),
-
-          // Waveform visualization
-          Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildWaveBar(3, false),
-                _buildWaveBar(5, false),
-                _buildWaveBar(7, false),
-                _buildWaveBar(4, false),
-                _buildWaveBar(2, false),
-                _buildWaveBar(6, false),
-                _buildWaveBar(8, true),
-                _buildWaveBar(5, false),
-                _buildWaveBar(3, false),
-                _buildWaveBar(2, false),
-              ],
-            ),
-          ),
-
-          const SizedBox(width: 12),
-
-          // Duration
-          Text(
-            '0:05',
-            style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.gray400,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWaveBar(double heightFactor, bool isActive) {
-    return Container(
-      width: 4,
-      height: heightFactor * 4,
-      decoration: BoxDecoration(
-        color: isActive ? AppColors.primaryDark : AppColors.primary,
-        borderRadius: BorderRadius.circular(2),
-      ),
-    );
-  }
-
-  Widget _buildRecommendationsSection(bool isDark) {
+  Widget _buildRecommendationsSection(BuildContext context, bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Section title
+        // Section header
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Icon(Icons.lightbulb, color: AppColors.primary, size: 24),
-            const SizedBox(width: 8),
             Text(
               'Rekomendasi',
               style: AppTextStyles.headingMedium.copyWith(
@@ -369,44 +309,68 @@ class ResultScreen extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
+            GestureDetector(
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Lihat semua rekomendasi')),
+                );
+              },
+              child: Text(
+                'Lihat semua',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.primaryDark,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
           ],
         ),
 
         const SizedBox(height: 16),
 
-        // Recommendations grid
-        Row(
+        // 2x2 Grid of recommendations
+        GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          childAspectRatio: 1.1,
           children: [
-            // Drink water
-            Expanded(
-              child: _buildRecommendationCard(
-                icon: Icons.water_drop,
-                iconColor: const Color(0xFF3B82F6),
-                iconBgColor: const Color(0xFFEFF6FF),
-                title: 'Minum Air',
-                description: 'Jaga hidrasi agar tenggorokan tidak kering.',
-                isDark: isDark,
-              ),
+            _buildRecommendationCard(
+              icon: Icons.water_drop,
+              iconColor: const Color(0xFF0284C7),
+              iconBgColor: const Color(0xFFE0F2FE),
+              title: 'Minum Air',
+              subtitle: 'Jaga hidrasi leher',
+              isDark: isDark,
             ),
-            const SizedBox(width: 16),
-            // Rest
-            Expanded(
-              child: _buildRecommendationCard(
-                icon: Icons.hotel,
-                iconColor: const Color(0xFFF97316),
-                iconBgColor: const Color(0xFFFFF7ED),
-                title: 'Istirahat',
-                description: 'Tidur minimal 7-8 jam untuk pemulihan.',
-                isDark: isDark,
-              ),
+            _buildRecommendationCard(
+              icon: Icons.bedtime,
+              iconColor: const Color(0xFF7E22CE),
+              iconBgColor: const Color(0xFFF3E8FF),
+              title: 'Istirahat',
+              subtitle: '7-8 jam per hari',
+              isDark: isDark,
+            ),
+            _buildRecommendationCard(
+              icon: Icons.coffee,
+              iconColor: const Color(0xFFC2410C),
+              iconBgColor: const Color(0xFFFFEDD5),
+              title: 'Teh Hangat',
+              subtitle: 'Redakan iritasi',
+              isDark: isDark,
+            ),
+            _buildRecommendationCard(
+              icon: Icons.medical_services,
+              iconColor: AppColors.primaryDark,
+              iconBgColor: AppColors.primary.withValues(alpha: 0.1),
+              title: 'Konsultasi',
+              subtitle: 'Jika berlanjut',
+              isDark: isDark,
             ),
           ],
         ),
-
-        const SizedBox(height: 16),
-
-        // Consult doctor - full width
-        _buildDoctorRecommendationCard(isDark),
       ],
     );
   }
@@ -416,7 +380,7 @@ class ResultScreen extends StatelessWidget {
     required Color iconColor,
     required Color iconBgColor,
     required String title,
-    required String description,
+    required String subtitle,
     required bool isDark,
   }) {
     return Container(
@@ -427,7 +391,7 @@ class ResultScreen extends StatelessWidget {
         border: Border.all(
           color: isDark
               ? Colors.white.withValues(alpha: 0.05)
-              : const Color(0xFFF3F4F6),
+              : const Color(0xFFF9FAFB),
         ),
         boxShadow: [
           BoxShadow(
@@ -438,16 +402,16 @@ class ResultScreen extends StatelessWidget {
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
               color: isDark ? iconColor.withValues(alpha: 0.2) : iconBgColor,
-              borderRadius: BorderRadius.circular(12),
+              shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: iconColor, size: 20),
+            child: Icon(icon, color: iconColor, size: 24),
           ),
           const SizedBox(height: 12),
           Text(
@@ -457,13 +421,13 @@ class ResultScreen extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(
-            description,
+            subtitle,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 10,
               color: AppColors.gray400,
-              height: 1.4,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -471,77 +435,39 @@ class ResultScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDoctorRecommendationCard(bool isDark) {
+  Widget _buildWarningBox(bool isDark) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: isDark
+            ? const Color(0xFF854D0E).withValues(alpha: 0.2)
+            : const Color(0xFFFEFCE8),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark
-              ? Colors.white.withValues(alpha: 0.05)
-              : const Color(0xFFF3F4F6),
+              ? const Color(0xFF854D0E).withValues(alpha: 0.3)
+              : const Color(0xFFFEF08A),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 30,
-            offset: const Offset(0, 10),
-          ),
-        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: isDark
-                  ? const Color(0xFFEF4444).withValues(alpha: 0.2)
-                  : const Color(0xFFFEF2F2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.medical_services,
-              color: Color(0xFFEF4444),
-              size: 20,
-            ),
+          Icon(
+            Icons.info_outline,
+            color: isDark ? const Color(0xFFFACC15) : const Color(0xFFCA8A04),
+            size: 20,
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Konsultasi Dokter',
-                      style: AppTextStyles.headingSmall.copyWith(
-                        color: isDark
-                            ? AppColors.lightText
-                            : AppColors.darkText,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Icon(
-                      Icons.chevron_right,
-                      color: AppColors.gray300,
-                      size: 18,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Disarankan jika batuk tidak membaik dalam 3 hari atau disertai demam.',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppColors.gray400,
-                    height: 1.4,
-                  ),
-                ),
-              ],
+            child: Text(
+              'Hasil ini berdasarkan analisa AI dan bukan diagnosa medis final. Segera ke dokter jika mengalami sesak napas.',
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark
+                    ? const Color(0xFFFEF9C3)
+                    : const Color(0xFF854D0E),
+                height: 1.5,
+              ),
             ),
           ),
         ],
@@ -557,7 +483,23 @@ class ResultScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+          color: isDark
+              ? AppColors.surfaceDark.withValues(alpha: 0.9)
+              : Colors.white.withValues(alpha: 0.9),
+          border: Border(
+            top: BorderSide(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : AppColors.gray100,
+            ),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 30,
+              offset: const Offset(0, -10),
+            ),
+          ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -577,16 +519,16 @@ class ResultScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.4),
-                      blurRadius: 30,
-                      offset: const Offset(0, 10),
+                      color: AppColors.primary.withValues(alpha: 0.3),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
                     ),
                   ],
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.search, color: Colors.white),
+                    const Icon(Icons.medical_services, color: Colors.white),
                     const SizedBox(width: 8),
                     Text(
                       'Cari Dokter Terdekat',
@@ -614,23 +556,22 @@ class ResultScreen extends StatelessWidget {
                   color: Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.1)
-                        : const Color(0xFFE5E7EB),
+                    color: isDark ? AppColors.gray600 : AppColors.gray200,
+                    width: 2,
                   ),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.refresh,
-                      color: isDark ? AppColors.lightText : AppColors.gray400,
+                      Icons.replay,
+                      color: isDark ? AppColors.gray400 : AppColors.gray500,
                     ),
                     const SizedBox(width: 8),
                     Text(
                       'Rekam Ulang',
                       style: AppTextStyles.buttonText.copyWith(
-                        color: isDark ? AppColors.lightText : AppColors.gray400,
+                        color: isDark ? AppColors.gray400 : AppColors.gray500,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
