@@ -57,8 +57,8 @@ class ResultScreen extends StatelessWidget {
                         // Warning Box
                         _buildWarningBox(isDark),
 
-                        // Bottom spacing for footer buttons
-                        const SizedBox(height: 160),
+                        // Bottom spacing for footer buttons - increased from 160
+                        const SizedBox(height: 120),
                       ],
                     ),
                   ),
@@ -504,46 +504,6 @@ class ResultScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Find doctor button
-            GestureDetector(
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Mencari dokter terdekat...')),
-                );
-              },
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.medical_services, color: Colors.white),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Cari Dokter Terdekat',
-                      style: AppTextStyles.buttonText.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
             // Re-record button
             GestureDetector(
               onTap: () {
@@ -551,7 +511,7 @@ class ResultScreen extends StatelessWidget {
               },
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                padding: const EdgeInsets.symmetric(vertical: 16),
                 decoration: BoxDecoration(
                   color: Colors.transparent,
                   borderRadius: BorderRadius.circular(12),

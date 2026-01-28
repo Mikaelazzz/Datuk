@@ -157,7 +157,7 @@ class _DiagnoseButtonState extends State<DiagnoseButton>
 
         // Helper text
         Text(
-          'Tekan tombol untuk mulai merekam batuk',
+          'Tekan tombol untuk mulai diagnosa',
           style: AppTextStyles.bodySmall.copyWith(color: AppColors.gray400),
           textAlign: TextAlign.center,
         ),

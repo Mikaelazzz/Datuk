@@ -183,7 +183,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
               TextButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const HistoryScreen(),
+                    ),
+                  );
+                },
                 child: Text(
                   'Lihat Semua',
                   style: AppTextStyles.bodySmall.copyWith(

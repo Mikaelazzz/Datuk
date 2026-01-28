@@ -524,48 +524,64 @@ class _ProcessingScreenState extends State<ProcessingScreen>
               borderRadius: BorderRadius.circular(999),
               child: Stack(
                 children: [
-                  // Progress fill
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 100),
-                    width: 280 * (_progress / 100),
-                    height: 16,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(999),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.4),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                  // Progress fill - aligned to left for left-to-right filling
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 100),
+                      width: 280 * (_progress / 100),
+                      height: 16,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(999),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.4),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
-                  // Shimmer effect
-                  AnimatedBuilder(
-                    animation: _shimmerController,
-                    builder: (context, _) {
-                      return Transform.translate(
-                        offset: Offset(
-                          -280 + (_shimmerController.value * 560),
-                          0,
-                        ),
-                        child: Container(
-                          width: 140,
-                          height: 16,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Colors.transparent,
-                                Colors.white.withValues(alpha: 0.4),
-                                Colors.transparent,
-                              ],
+                  // Shimmer effect - only on filled portion
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: 280 * (_progress / 100),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(999),
+                      child: AnimatedBuilder(
+                        animation: _shimmerController,
+                        builder: (context, _) {
+                          final shimmerWidth = 60.0;
+                          final progressWidth = 280 * (_progress / 100);
+                          return Transform.translate(
+                            offset: Offset(
+                              -shimmerWidth +
+                                  (_shimmerController.value *
+                                      (progressWidth + shimmerWidth)),
+                              0,
                             ),
-                          ),
-                        ),
-                      );
-                    },
+                            child: Container(
+                              width: shimmerWidth,
+                              height: 16,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.white.withValues(alpha: 0.4),
+                                    Colors.transparent,
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   ),
                 ],
               ),
