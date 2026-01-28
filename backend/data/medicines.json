@@ -1,0 +1,76 @@
+{
+    "Batuk kering": [
+        {
+            "name": "Siladex Antitussive",
+            "description": "Sirup obat batuk untuk meredakan batuk tidak berdahak atau batuk kering yang disertai alergi.",
+            "dose": "Dewasa dan anak-anak > 12 tahun: 3 x sehari 1 sendok takar (5 ml). Anak-anak 6-12 tahun: 3 x sehari 0.5 sendok takar (2.5 ml).",
+            "type": "Sirup",
+            "price_range": "Rp 15.000 - Rp 25.000"
+        },
+        {
+            "name": "Vicks Formula 44",
+            "description": "Meredakan batuk kering, bersin-bersin, dan tenggorokan gatal.",
+            "dose": "Dewasa (>12 tahun): 2 sendok takar (10ml) setiap 4 jam. Anak (6-12 tahun): 1 sendok takar (5ml) setiap 4 jam.",
+            "type": "Sirup",
+            "price_range": "Rp 20.000 - Rp 35.000"
+        },
+        {
+            "name": "Actifed Plus Expectorant (Merah)",
+            "description": "Meringankan pilek dan batuk gatal & kering.",
+            "dose": "Dewasa: 1 sendok takar (5 ml), 3 kali sehari. Anak 6-12 tahun: 1/2 sendok takar (2.5 ml), 3 kali sehari.",
+            "type": "Sirup",
+            "price_range": "Rp 60.000 - Rp 70.000"
+        },
+        {
+            "name": "Sanadryl DMP",
+            "description": "Untuk meringankan gejala batuk tidak berdahak yang menimbulkan rasa sakit atau batuk karena alergi.",
+            "dose": "Dewasa: 10 ml, 3-4 kali sehari. Anak 6-12 tahun: 5 ml, 3-4 kali sehari.",
+            "type": "Sirup",
+            "price_range": "Rp 20.000 - Rp 30.000"
+        },
+        {
+            "name": "Konidin Tablet",
+            "description": "Meredakan batuk karena alergi, flu, dan sisa-sisa bronkitis.",
+            "dose": "Dewasa: 1-2 tablet, 3 kali sehari. Anak 6-12 tahun: 1/2 - 1 tablet, 3 kali sehari.",
+            "type": "Tablet",
+            "price_range": "Rp 3.000 - Rp 5.000 / Strip"
+        }
+    ],
+    "Batuk berdahak": [
+        {
+            "name": "Bisolvon Extra",
+            "description": "Mengencerkan dahak pada batuk berdahak agar mudah dikeluarkan.",
+            "dose": "Dewasa dan Anak > 10 tahun: 3 x 10 ml per hari. Anak 5-10 tahun: 3 x 5 ml per hari.",
+            "type": "Sirup",
+            "price_range": "Rp 40.000 - Rp 60.000"
+        },
+        {
+            "name": "OBH Combi Batuk Berdahak",
+            "description": "Obat batuk hitam untuk meredakan batuk berdahak dan gejala flu.",
+            "dose": "Dewasa: 3 x sehari 3 sendok takar (15 ml). Anak 6-12 tahun: 3 x sehari 1 sendok takar (5 ml).",
+            "type": "Sirup",
+            "price_range": "Rp 15.000 - Rp 25.000"
+        },
+        {
+            "name": "Woods' Peppermint Expectorant",
+            "description": "Membantu meredakan batuk berdahak dan mengencerkan dahak.",
+            "dose": "Dewasa: 3 x sehari 10 ml. Anak 6-12 tahun: 3 x sehari 5 ml.",
+            "type": "Sirup",
+            "price_range": "Rp 25.000 - Rp 35.000"
+        },
+        {
+            "name": "Siladex Mucolytic & Expectorant",
+            "description": "Meredakan batuk berdahak dan mempermudah pengeluaran dahak.",
+            "dose": "Dewasa: 3 x sehari 1 sendok takar (5 ml). Anak 6-12 tahun: 3 x sehari 0.5 sendok takar (2.5 ml).",
+            "type": "Sirup",
+            "price_range": "Rp 15.000 - Rp 25.000"
+        },
+        {
+            "name": "Komix OBH",
+            "description": "Meredakan batuk berdahak dan pilek.",
+            "dose": "Dewasa: 3 x sehari 1 sachet (7 ml).",
+            "type": "Sirup (Sachet)",
+            "price_range": "Rp 1.500 - Rp 2.000 / Sachet"
+        }
+    ]
+}
