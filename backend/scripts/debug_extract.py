@@ -19,4 +19,4 @@ def extract_partial_code(path):
             print(f"\n--- BLOCK {i} ---")
             print(raw_source)
 
-extract_partial_code('../rag-obat-batuk.ipynb')
+extract_partial_code('../../rag-obat-batuk.ipynb')

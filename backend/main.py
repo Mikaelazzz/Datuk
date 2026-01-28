@@ -3,6 +3,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 import uvicorn
 import shutil
 import os
+import json
 import tensorflow as tf
 import numpy as np
 from preprocess import create_spectrogram, preprocess_for_model
@@ -37,38 +38,23 @@ LABELS = {
 
 
 # Medicine Database (Simulated RAG)
-MEDICINES = {
-    "Batuk kering": [
-        {
-            "name": "Siladex Antitussive",
-            "description": "Meredakan batuk tidak berdahak/kering disertai pilek.",
-            "dose": "Dewasa: 3x sehari 1 sendok takar (5 ml)."
-        },
-        {
-            "name": "Vicks Formula 44",
-            "description": "Meredakan batuk kering dan gatal tenggorokan.",
-            "dose": "Dewasa: 1 sendok makan setiap 4 jam."
-        }
-    ],
-    "Batuk berdahak": [
-        {
-            "name": "Bisolvon Extra",
-            "description": "Mengencerkan dahak agar mudah dikeluarkan.",
-            "dose": "Dewasa: 2x sehari 8 ml."
-        },
-        {
-            "name": "OBH Combi Batuk Berdahak",
-            "description": "Ekspektoran untuk mengeluarkan dahak.",
-            "dose": "Dewasa: 3x sehari 15 ml."
-        }
-    ]
-}
+MEDICINES = {}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global model
+    global model, MEDICINES
     try:
         base_dir = os.path.dirname(os.path.abspath(__file__))
+        
+        # Load Medicines
+        json_path = os.path.join(base_dir, "data", "medicines.json")
+        if os.path.exists(json_path):
+             with open(json_path, 'r') as f:
+                 MEDICINES = json.load(f)
+             print(f"Medicines loaded: {len(MEDICINES)} categories", file=sys.stderr)
+        else:
+             print("Warning: medicines.json not found!", file=sys.stderr)
+
         # Go up one level to find the model
         project_root = os.path.dirname(base_dir) # d:\APLAI\project UAS\Datuk
         original_model_path = os.path.join(project_root, "final_cough_model.keras")
@@ -95,7 +81,7 @@ async def lifespan(app: FastAPI):
         model = tf.keras.models.load_model(load_path)
         print("Model loaded successfully!", file=sys.stderr)
     except Exception as e:
-        print(f"Failed to load model: {e}", file=sys.stderr)
+        print(f"Failed to load model or data: {e}", file=sys.stderr)
         import traceback
         traceback.print_exc()
     
@@ -103,6 +89,18 @@ async def lifespan(app: FastAPI):
     
     # Clean up if needed
     model = None
+
+
+def analyze_severity(confidence):
+    """
+    Heuristic analysis of severity based on model confidence.
+    """
+    if confidence > 0.90:
+        return "Tingkat Lanjut (Indikasi Kuat)"
+    elif confidence > 0.70:
+        return "Sedang"
+    else:
+        return "Ringan (Indikasi Lemah)"
 
 app = FastAPI(lifespan=lifespan)
 
@@ -147,6 +145,9 @@ async def predict_cough(file: UploadFile = File(...)):
         # Confidence calculation
         confidence = score_wet if predicted_class_id == 1 else (1.0 - score_wet)
         
+        # Analysis Level
+        level = analyze_severity(confidence)
+        
         # RAG / Recommendation Logic
         recommendations = MEDICINES.get(label, [])
         
@@ -155,9 +156,11 @@ async def predict_cough(file: UploadFile = File(...)):
             "file": file.filename,
             "prediction": label,
             "confidence": confidence,
+            "analysis": level,
             "score_wet": score_wet,
             "threshold_used": THRESHOLD,
-            "recommendations": recommendations
+            "recommendations": recommendations,
+            "message": "Klasifikasi berhasil."
         }
         
     except Exception as e:
