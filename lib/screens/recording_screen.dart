@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import '../constants/colors.dart';
 import '../constants/text_styles.dart';
+import 'processing_screen.dart';
 
 /// Recording screen for capturing cough audio
 class RecordingScreen extends StatefulWidget {
@@ -63,14 +64,11 @@ class _RecordingScreenState extends State<RecordingScreen>
 
   void _stopTimer() {
     _timer?.cancel();
-    // TODO: Process recording and navigate to results
+    // Navigate to processing screen if there's a recording
     if (_seconds > 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Rekaman ${_formatTime(_seconds)} selesai'),
-          backgroundColor: AppColors.primary,
-          duration: const Duration(seconds: 2),
-        ),
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const ProcessingScreen()),
       );
     }
   }
