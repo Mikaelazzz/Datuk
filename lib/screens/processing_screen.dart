@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import '../constants/colors.dart';
 import '../constants/text_styles.dart';
+import 'result_screen.dart';
 
 /// AI Processing screen - shows while analyzing the cough recording
 class ProcessingScreen extends StatefulWidget {
@@ -61,17 +62,13 @@ class _ProcessingScreenState extends State<ProcessingScreen>
   }
 
   void _onProcessingComplete() {
-    // TODO: Navigate to results screen
+    // Navigate to results screen
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Analisa selesai!'),
-            backgroundColor: AppColors.primary,
-          ),
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const ResultScreen()),
         );
-        // Navigate back to dashboard for now
-        Navigator.popUntil(context, (route) => route.isFirst);
       }
     });
   }
