@@ -7,6 +7,7 @@ import '../widgets/dashboard/history_item.dart';
 import '../widgets/dashboard/bottom_nav_bar.dart';
 import '../widgets/dashboard/audio_input_sheet.dart';
 import '../services/audio_service.dart';
+import 'recording_screen.dart';
 
 /// Dashboard screen - main screen after starting session
 class DashboardScreen extends StatefulWidget {
@@ -24,15 +25,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     AudioInputSheet.show(
       context,
       onRecordTap: () {
-        // Handle record action
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Memulai perekaman batuk...'),
-            backgroundColor: Color(0xFF42f099),
-            duration: Duration(seconds: 2),
-          ),
+        // Navigate to recording screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const RecordingScreen()),
         );
-        // TODO: Implement recording functionality
       },
       onUploadTap: () async {
         // Handle upload action
