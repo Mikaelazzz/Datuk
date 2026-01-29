@@ -37,14 +37,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
         // Handle upload action
         final audioFile = await AudioService.pickAudioFile(context);
         if (audioFile != null && context.mounted) {
-          // Navigate to processing screen with the audio file
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) =>
-                  ProcessingScreen(audioFilePath: audioFile.name),
-            ),
-          );
+          if (context.mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ProcessingScreen(
+                  audioFilePath: audioFile.path ?? audioFile.name,
+                  audioBytes: audioFile.bytes,
+                ),
+              ),
+            );
+          }
         }
       },
     );

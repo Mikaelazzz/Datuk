@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // For kIsWeb and consolidateHttpClientResponseBytes
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
+import 'dart:typed_data'; // For Uint8List
+import 'package:record/record.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:http/http.dart' as http;
 import '../constants/colors.dart';
 import '../constants/text_styles.dart';
 import 'processing_screen.dart';
@@ -21,9 +28,15 @@ class _RecordingScreenState extends State<RecordingScreen>
   late AnimationController _pulseController;
   late AnimationController _waveController;
 
+  // Audio recorder instance
+  late final AudioRecorder _audioRecorder;
+  String? _audioPath;
+  Uint8List? _audioBytes; // For Web platform
+
   @override
   void initState() {
     super.initState();
+    _audioRecorder = AudioRecorder();
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 3),
@@ -40,18 +53,133 @@ class _RecordingScreenState extends State<RecordingScreen>
     _timer?.cancel();
     _pulseController.dispose();
     _waveController.dispose();
+    _audioRecorder.dispose();
     super.dispose();
   }
 
-  void _toggleRecording() {
-    setState(() {
-      _isRecording = !_isRecording;
-      if (_isRecording) {
+  Future<void> _toggleRecording() async {
+    if (_isRecording) {
+      await _stopRecording();
+    } else {
+      await _startRecording();
+    }
+  }
+
+  Future<void> _startRecording() async {
+    try {
+      // Check and request permission
+      if (await _audioRecorder.hasPermission()) {
+        String? path;
+
+        if (kIsWeb) {
+          // Web: No path needed, record to memory/blob
+          // Use WAV format for better compatibility
+          await _audioRecorder.start(
+            const RecordConfig(encoder: AudioEncoder.wav),
+            path: '', // Empty path for web blob recording
+          );
+          path = 'web_recording.wav'; // Placeholder name
+        } else {
+          // Native platforms: Use temporary directory
+          final directory = await getTemporaryDirectory();
+          final timestamp = DateTime.now().millisecondsSinceEpoch;
+          path = '${directory.path}/recording_$timestamp.m4a';
+
+          await _audioRecorder.start(const RecordConfig(), path: path);
+        }
+
+        setState(() {
+          _isRecording = true;
+          _audioPath = path;
+          _seconds = 0;
+        });
+
         _startTimer();
       } else {
-        _stopTimer();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Izin mikrofon diperlukan untuk merekam.'),
+            ),
+          );
+        }
       }
-    });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal memulai rekaman: $e')));
+      }
+    }
+  }
+
+  Future<void> _stopRecording() async {
+    try {
+      _stopTimer();
+      final path = await _audioRecorder.stop();
+
+      Uint8List? bytes;
+
+      if (kIsWeb && path != null) {
+        // On Web, path is a blob URL (e.g., blob:http://localhost:xxxxx/...)
+        // We need to fetch the bytes from this blob URL using HTTP
+        try {
+          final response = await HttpClient()
+              .getUrl(Uri.parse(path))
+              .then((request) => request.close());
+          final responseBytes = await consolidateHttpClientResponseBytes(
+            response,
+          );
+          bytes = responseBytes;
+          debugPrint(
+            'Web recording: fetched ${bytes!.length} bytes from blob URL',
+          );
+        } catch (e) {
+          debugPrint('Failed to fetch blob URL: $e');
+          // Fallback: try using the http package
+          try {
+            final httpResponse = await http.get(Uri.parse(path));
+            bytes = httpResponse.bodyBytes;
+            debugPrint(
+              'Web recording (http fallback): fetched ${bytes!.length} bytes',
+            );
+          } catch (e2) {
+            debugPrint('HTTP fallback also failed: $e2');
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Gagal mengambil data rekaman: $e2')),
+              );
+            }
+            return;
+          }
+        }
+      }
+
+      setState(() {
+        _isRecording = false;
+        _audioPath = path;
+        _audioBytes = bytes;
+      });
+
+      // Navigate to processing screen if we have a recording
+      if (mounted && (_audioPath != null || _audioBytes != null)) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProcessingScreen(
+              audioFilePath: _audioPath ?? 'web_recording.wav',
+              audioBytes: _audioBytes,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal menghentikan rekaman: $e')),
+        );
+      }
+    }
   }
 
   void _startTimer() {
@@ -64,13 +192,6 @@ class _RecordingScreenState extends State<RecordingScreen>
 
   void _stopTimer() {
     _timer?.cancel();
-    // Navigate to processing screen if there's a recording
-    if (_seconds > 0) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const ProcessingScreen()),
-      );
-    }
   }
 
   String _formatTime(int seconds) {
@@ -79,9 +200,12 @@ class _RecordingScreenState extends State<RecordingScreen>
     return '$mins:$secs';
   }
 
-  void _cancelRecording() {
+  void _cancelRecording() async {
     _timer?.cancel();
-    Navigator.pop(context);
+    if (_isRecording) {
+      await _audioRecorder.stop();
+    }
+    if (mounted) Navigator.pop(context);
   }
 
   @override
@@ -297,7 +421,9 @@ class _RecordingScreenState extends State<RecordingScreen>
             child: Column(
               children: [
                 Text(
-                  'Silakan batuk di dekat mikrofon',
+                  _isRecording
+                      ? 'Sedang Merekam...'
+                      : 'Silakan batuk di dekat mikrofon',
                   textAlign: TextAlign.center,
                   style: AppTextStyles.headingMedium.copyWith(
                     color: isDark ? AppColors.lightText : AppColors.darkText,
@@ -385,7 +511,13 @@ class _RecordingScreenState extends State<RecordingScreen>
 
           // Cancel button
           TextButton(
-            onPressed: _cancelRecording,
+            onPressed: () {
+              if (_isRecording) {
+                _cancelRecording();
+              } else {
+                Navigator.pop(context);
+              }
+            },
             child: Text(
               'Batal',
               style: AppTextStyles.bodyMedium.copyWith(

@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data'; // Added for Uint8List
+import 'package:http/http.dart' as http;
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'dart:math' as math;
 import '../constants/colors.dart';
 import '../constants/text_styles.dart';
@@ -8,8 +13,9 @@ import 'result_screen.dart';
 /// AI Processing screen - shows while analyzing the cough recording
 class ProcessingScreen extends StatefulWidget {
   final String? audioFilePath;
+  final Uint8List? audioBytes;
 
-  const ProcessingScreen({super.key, this.audioFilePath});
+  const ProcessingScreen({super.key, this.audioFilePath, this.audioBytes});
 
   @override
   State<ProcessingScreen> createState() => _ProcessingScreenState();
@@ -42,36 +48,165 @@ class _ProcessingScreenState extends State<ProcessingScreen>
       duration: const Duration(milliseconds: 300),
     );
 
-    // Simulate progress
+    // Start processing after frame is built to ensure context is available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _processAudio();
+    });
+  }
+
+  Future<void> _processAudio() async {
+    // Start fake progress for visual feedback while uploading
     _startProgressSimulation();
+
+    if (widget.audioFilePath == null && widget.audioBytes == null) {
+      // Modified this line
+      _showError("File audio tidak ditemukan");
+      return;
+    }
+
+    try {
+      // Determine the API base URL based on the platform
+      String baseUrl;
+      if (kIsWeb) {
+        baseUrl = 'http://127.0.0.1:8000';
+      } else if (Platform.isAndroid) {
+        baseUrl = 'http://10.0.2.2:8000';
+      } else {
+        baseUrl = 'http://127.0.0.1:8000';
+      }
+
+      final uri = Uri.parse('$baseUrl/predict');
+      debugPrint('Connecting to API at: $uri');
+
+      final request = http.MultipartRequest('POST', uri);
+
+      if (kIsWeb) {
+        if (widget.audioBytes != null) {
+          request.files.add(
+            http.MultipartFile.fromBytes(
+              'file',
+              widget.audioBytes!,
+              filename: 'audio.wav', // Default name for blob
+            ),
+          );
+        } else {
+          _showError("Web Upload gagal: File bytes kosong.");
+          return;
+        }
+      } else {
+        // Native: Use fromPath
+        if (widget.audioFilePath != null) {
+          // Added null check for audioFilePath
+          final file = File(widget.audioFilePath!);
+          if (await file.exists()) {
+            request.files.add(
+              await http.MultipartFile.fromPath('file', widget.audioFilePath!),
+            );
+          } else {
+            throw Exception("File not found at path: ${widget.audioFilePath}");
+          }
+        } else {
+          throw Exception(
+            "File path is null on native platform",
+          ); // Added error for null path
+        }
+      }
+
+      debugPrint('Uploading to $uri...');
+      // Send valid request with timeout
+      final streamedResponse = await request.send().timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw TimeoutException(
+            'Koneksi ke server timeout (30s). Pastikan server backend berjalan.',
+          );
+        },
+      );
+      final response = await http.Response.fromStream(streamedResponse);
+
+      debugPrint('Response status: ${response.statusCode}');
+      debugPrint('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        // Boost progress to 100%
+        _progressTimer?.cancel();
+        setState(() => _progress = 100);
+
+        // Wait a small moment for animation
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        if (mounted) {
+          // Parse recommendations safely
+          List<dynamic> rawRecs = data['recommendations'] ?? [];
+          List<Map<String, dynamic>> medicines =
+              List<Map<String, dynamic>>.from(rawRecs);
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ResultScreen(
+                diagnosisType: data['prediction'] ?? 'Tidak Diketahui',
+                diagnosisSubtitle:
+                    'Tingkat Kondisi: ${data['analysis'] ?? 'Normal'}',
+                diagnosisDescription: data['message'] ?? 'Analisa selesai.',
+                accuracyPercent: ((data['confidence'] ?? 0.0) * 100).toInt(),
+                recommendations: medicines,
+              ),
+            ),
+          );
+        }
+      } else {
+        _showError(
+          "Gagal menganalisa (Server ${response.statusCode}): ${response.body}",
+        );
+      }
+    } catch (e) {
+      debugPrint('Error uploading: $e');
+      _showError(
+        "Terjadi kesalahan koneksi to backend. Pastikan server berjalan dan alamat benar. Error: $e",
+      );
+    }
+  }
+
+  void _showError(String message) {
+    _progressTimer?.cancel();
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Text('Gagal Menganalisa'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close dialog
+                Navigator.pop(context); // Back to dashboard
+              },
+              child: const Text('Kembali'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   void _startProgressSimulation() {
     _progressTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      if (_progress >= 100) {
-        timer.cancel();
-        _onProcessingComplete();
+      // Don't reach 100% automatically, wait for API
+      if (_progress >= 90) {
         return;
       }
       setState(() {
-        // Random progress increments for realistic feel
-        _progress += (math.Random().nextDouble() * 3) + 0.5;
-        if (_progress > 100) _progress = 100;
+        _progress += (math.Random().nextDouble() * 2) + 0.5;
+        if (_progress > 90) _progress = 90;
       });
     });
   }
 
-  void _onProcessingComplete() {
-    // Navigate to results screen
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const ResultScreen()),
-        );
-      }
-    });
-  }
+  // Removed _onProcessingComplete as it is now handled in _processAudio logic
 
   @override
   void dispose() {

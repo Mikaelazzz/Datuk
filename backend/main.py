@@ -1,5 +1,6 @@
 
 from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import shutil
 import os
@@ -11,8 +12,9 @@ from preprocess import create_spectrogram, preprocess_for_model
 
 from contextlib import asynccontextmanager
 import sys
+import time
 
-# ... imports ...
+# CORS configuration for Flutter Web
 
 # Global variables for model
 model = None
@@ -57,25 +59,39 @@ async def lifespan(app: FastAPI):
 
         # Go up one level to find the model
         project_root = os.path.dirname(base_dir) # d:\APLAI\project UAS\Datuk
-        original_model_path = os.path.join(project_root, "final_cough_model.keras")
         
-        load_path = original_model_path
+        # Possible model locations (in order of priority)
+        model_paths_to_try = [
+            os.path.join(base_dir, "temp_model_zipped.keras"),  # 1. Cached zip in backend/
+            os.path.join(project_root, "final_cough_model.keras"),  # 2. .keras file in root
+            os.path.join(project_root, "final_cough_model"),  # 3. Directory in root
+        ]
         
-        # Check if it's a directory (unzipped Keras model)
-        if os.path.isdir(original_model_path):
-            print(f"Model is a directory: {original_model_path}", file=sys.stderr)
-            temp_zip_path = os.path.join(base_dir, "temp_model_zipped.keras")
-            
-            # Use existing if available to save time? Or overwrite to be safe?
-            # Creating zip...
-            if not os.path.exists(temp_zip_path):
-                print("Zipping model to temporary file...", file=sys.stderr)
-                zip_base = os.path.join(base_dir, "temp_model_zipped")
-                shutil.make_archive(zip_base, 'zip', original_model_path)
-                os.rename(zip_base + ".zip", temp_zip_path)
-            
-            load_path = temp_zip_path
-            print(f"Using zipped model: {load_path}", file=sys.stderr)
+        load_path = None
+        for path in model_paths_to_try:
+            if os.path.exists(path):
+                if os.path.isdir(path):
+                    # It's a directory, need to zip it for Keras
+                    print(f"Model is a directory: {path}", file=sys.stderr)
+                    temp_zip_path = os.path.join(base_dir, "temp_model_zipped.keras")
+                    
+                    if not os.path.exists(temp_zip_path):
+                        print("Zipping model to temporary file...", file=sys.stderr)
+                        zip_base = os.path.join(base_dir, "temp_model_zipped")
+                        shutil.make_archive(zip_base, 'zip', path)
+                        os.rename(zip_base + ".zip", temp_zip_path)
+                    
+                    load_path = temp_zip_path
+                else:
+                    load_path = path
+                print(f"Found model at: {load_path}", file=sys.stderr)
+                break
+        
+        if load_path is None:
+            print("ERROR: No model file found! Checked paths:", file=sys.stderr)
+            for p in model_paths_to_try:
+                print(f"  - {p}", file=sys.stderr)
+            raise FileNotFoundError("Model file not found")
 
         print(f"Loading model from {load_path}...", file=sys.stderr)
         model = tf.keras.models.load_model(load_path)
@@ -104,38 +120,67 @@ def analyze_severity(confidence):
 
 app = FastAPI(lifespan=lifespan)
 
-# ... rest of code ...
+# Add CORS middleware to allow Flutter Web requests
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins for development
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allow all headers
+)
+
+# --- API Endpoints ---
 
 
 @app.post("/predict")
 async def predict_cough(file: UploadFile = File(...)):
+    print(f"--- [BACKEND] Received request: /predict ---")
+    print(f"--- [BACKEND] File name: {file.filename} ---")
+
     if not model:
+        print("--- [BACKEND] ERROR: Model not loaded! ---")
         raise HTTPException(status_code=503, detail="Model not loaded")
     
     if not file.filename:
          raise HTTPException(status_code=400, detail="Empty filename")
 
     # Save temp file
-    temp_filename = f"temp_{file.filename}"
     temp_dir = "temp_uploads"
     os.makedirs(temp_dir, exist_ok=True)
-    temp_path = os.path.join(temp_dir, temp_filename)
     
     try:
-        with open(temp_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-            
+        start_read = time.time()
+        contents = await file.read()
+        print(f"--- [BACKEND] File read successfully. Size: {len(contents)} bytes. Time: {time.time() - start_read:.4f}s ---")
+
+        temp_filename = f"temp_{int(time.time())}_{file.filename}"
+        temp_path = os.path.join(temp_dir, temp_filename) # Ensure temp_path uses temp_dir
+        with open(temp_path, "wb") as f:
+            f.write(contents)
+        print(f"--- [BACKEND] Temp file saved: {temp_path} ---")
+
         # Preprocessing
-        print(f"Processing {file.filename}...")
+        print(f"--- [BACKEND] Starting spectrogram generation for {temp_path}... ---")
+        start_spectrogram = time.time()
         spectrogram_img = create_spectrogram(temp_path)
+        print(f"--- [BACKEND] Spectrogram generated. Time: {time.time() - start_spectrogram:.4f}s ---")
+
         if spectrogram_img is None:
+             print("--- [BACKEND] ERROR: Spectrogram generation failed (return is None) ---")
              raise HTTPException(status_code=400, detail="Could not process audio file (Spectrogram generation failed)")
              
+        print("--- [BACKEND] Starting preprocessing... ---")
         input_data = preprocess_for_model(spectrogram_img)
+        print(f"--- [BACKEND] Preprocessing complete. Input shape: {input_data.shape} ---")
         
         # Inference
         # Output is sigmoid (0-1), probability of class 1 (Wet)
+        print("--- [BACKEND] Starting model prediction... ---")
+        start_predict = time.time()
         prediction = model.predict(input_data)
+        print(f"--- [BACKEND] Prediction complete. Time: {time.time() - start_predict:.4f}s ---")
+        print(f"--- [BACKEND] Raw Prediction: {prediction} ---")
+
         score_wet = float(prediction[0][0])
          
         # Decision Logic

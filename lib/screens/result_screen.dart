@@ -8,6 +8,7 @@ class ResultScreen extends StatelessWidget {
   final String diagnosisSubtitle;
   final String diagnosisDescription;
   final int accuracyPercent;
+  final List<dynamic> recommendations;
 
   const ResultScreen({
     super.key,
@@ -16,6 +17,7 @@ class ResultScreen extends StatelessWidget {
     this.diagnosisDescription =
         'Batuk jenis ini tidak menghasilkan dahak atau lendir. Sering disebabkan oleh iritasi tenggorokan, alergi, atau tahap awal infeksi virus ringan.',
     this.accuracyPercent = 94,
+    this.recommendations = const [],
   });
 
   @override
@@ -298,29 +300,110 @@ class ResultScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Section header
+        // MEDICINE RECOMMENDATIONS (FROM API)
+        if (recommendations.isNotEmpty) ...[
+          Text(
+            'Rekomendasi Obat',
+            style: AppTextStyles.headingMedium.copyWith(
+              color: isDark ? AppColors.lightText : AppColors.darkText,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: recommendations.length,
+            separatorBuilder: (context, index) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final med = recommendations[index];
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.surfaceDark : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.05)
+                        : const Color(0xFFF9FAFB),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.medication,
+                        color: AppColors.primary,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            med['name'] ?? 'Nama Obat',
+                            style: AppTextStyles.headingSmall.copyWith(
+                              fontSize: 16,
+                              color: isDark
+                                  ? AppColors.lightText
+                                  : AppColors.darkText,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            med['description'] ?? '',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.gray400,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            med['price_range'] ?? '',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 32),
+        ],
+
+        // HEALING RECOMMENDATIONS (STATIC)
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Rekomendasi',
+              'Saran Penyembuhan',
               style: AppTextStyles.headingMedium.copyWith(
                 color: isDark ? AppColors.lightText : AppColors.darkText,
                 fontWeight: FontWeight.bold,
-              ),
-            ),
-            GestureDetector(
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Lihat semua rekomendasi')),
-                );
-              },
-              child: Text(
-                'Lihat semua',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.primaryDark,
-                  fontWeight: FontWeight.w500,
-                ),
               ),
             ),
           ],
@@ -328,7 +411,7 @@ class ResultScreen extends StatelessWidget {
 
         const SizedBox(height: 16),
 
-        // 2x2 Grid of recommendations
+        // 2x2 Grid of healing recommendations
         GridView.count(
           crossAxisCount: 2,
           shrinkWrap: true,
