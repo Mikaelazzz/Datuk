@@ -92,58 +92,55 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ? AppColors.backgroundDark
           : AppColors.backgroundLight,
       body: SafeArea(
-        child: Stack(
+        child: Column(
           children: [
-            // Main content
-            SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header
-                  _buildHeader(isDark),
+            // Main content - Expanded to fill available space
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header
+                    _buildHeader(isDark),
 
-                  // Diagnose Button Section
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Center(
-                      child: DiagnoseButton(
-                        onPressed: () => _showAudioInputOptions(context),
+                    // Diagnose Button Section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      child: Center(
+                        child: DiagnoseButton(
+                          onPressed: () => _showAudioInputOptions(context),
+                        ),
                       ),
                     ),
-                  ),
 
-                  // History Section
-                  _buildHistorySection(isDark),
+                    // History Section
+                    _buildHistorySection(isDark),
 
-                  // Bottom spacing for nav bar
-                  const SizedBox(height: 100),
-                ],
+                    // Bottom spacing
+                    const SizedBox(height: 24),
+                  ],
+                ),
               ),
             ),
 
-            // Bottom Navigation
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: BottomNavBar(
-                selectedIndex: _selectedNavIndex,
-                onItemSelected: (index) {
-                  if (index == 1) {
-                    // Navigate to history screen
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const HistoryScreen(),
-                      ),
-                    );
-                  } else {
-                    setState(() {
-                      _selectedNavIndex = index;
-                    });
-                  }
-                },
-              ),
+            // Bottom Navigation - Fixed at bottom
+            BottomNavBar(
+              selectedIndex: _selectedNavIndex,
+              onItemSelected: (index) {
+                if (index == 1) {
+                  // Navigate to history screen
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const HistoryScreen(),
+                    ),
+                  );
+                } else {
+                  setState(() {
+                    _selectedNavIndex = index;
+                  });
+                }
+              },
             ),
           ],
         ),
@@ -251,7 +248,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     if (_recentHistory.isEmpty) {
       return Container(
-        padding: const EdgeInsets.all(24),
+        width: double.infinity,
+        height: 220,
+        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
         decoration: BoxDecoration(
           color: isDark ? AppColors.surfaceDark : Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -262,13 +261,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.history_toggle_off, size: 48, color: AppColors.gray400),
             const SizedBox(height: 12),
             Text(
               'Belum ada riwayat',
               style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.gray400,
+                color: isDark ? AppColors.lightText : AppColors.darkText,
+                fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 4),

@@ -17,6 +17,7 @@ dependencies:
   path_provider: ^2.0.0
   permission_handler: ^10.0.0
   lottie: ^3.3.2
+  connectivity_plus: ^7.0.0
 
 dev_dependencies:
   flutter_test:

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'config/theme.dart';
 import 'screens/landing_page.dart';
+import 'widgets/connectivity_wrapper.dart';
 import 'package:device_preview/device_preview.dart';
 
 void main() {
@@ -24,7 +25,7 @@ class DatukApp extends StatelessWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode:
           ThemeMode.light, // Change to ThemeMode.system for auto dark mode
-      home: const LandingPage(),
+      home: const ConnectivityWrapper(child: LandingPage()),
     );
   }
 }
