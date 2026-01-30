@@ -12,6 +12,8 @@ import 'recording_screen.dart';
 import 'processing_screen.dart';
 import 'history_screen.dart';
 import 'history_detail_screen.dart';
+import '../services/websocket_service.dart';
+import 'dart:async';
 
 /// Dashboard screen - main screen after starting session
 class DashboardScreen extends StatefulWidget {
@@ -28,10 +30,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<DiagnosisHistory> _recentHistory = [];
   bool _isLoadingHistory = true;
 
+  // WebSocket
+  final WebSocketService _wsService = WebSocketService();
+  StreamSubscription<Map<String, dynamic>>? _wsSubscription;
+
   @override
   void initState() {
     super.initState();
     _fetchRecentHistory();
+    _initWebSocket();
+  }
+
+  @override
+  void dispose() {
+    _wsSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _initWebSocket() {
+    _wsService.connect();
+    _wsSubscription = _wsService.eventStream.listen((event) {
+      final type = event['type'] as String?;
+      if (type == 'new_diagnosis' || type == 'diagnosis_deleted') {
+        // Refresh history when new diagnosis or deletion occurs
+        _fetchRecentHistory();
+      }
+    });
   }
 
   Future<void> _fetchRecentHistory() async {

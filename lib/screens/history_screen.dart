@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'dart:async';
 import '../constants/colors.dart';
 import '../constants/text_styles.dart';
 import '../widgets/dashboard/bottom_nav_bar.dart';
 import '../services/api_service.dart';
+import '../services/websocket_service.dart';
 import 'dashboard_screen.dart';
 import 'history_detail_screen.dart';
 
@@ -32,12 +34,36 @@ class _HistoryScreenState extends State<HistoryScreen> {
   String? _errorMessage;
   int _currentOffset = 0;
 
+  // WebSocket
+  final WebSocketService _wsService = WebSocketService();
+  StreamSubscription<Map<String, dynamic>>? _wsSubscription;
+
   @override
   void initState() {
     super.initState();
     _fetchHistory();
     _searchController.addListener(_filterHistory);
     _scrollController.addListener(_onScroll);
+    _initWebSocket();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _scrollController.dispose();
+    _wsSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _initWebSocket() {
+    _wsService.connect();
+    _wsSubscription = _wsService.eventStream.listen((event) {
+      final type = event['type'] as String?;
+      if (type == 'new_diagnosis' || type == 'diagnosis_deleted') {
+        // Refresh history when new diagnosis or deletion occurs
+        _fetchHistory(refresh: true);
+      }
+    });
   }
 
   void _onScroll() {
@@ -157,13 +183,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
     } else {
       setState(() => _selectedNavIndex = index);
     }
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    _scrollController.dispose();
-    super.dispose();
   }
 
   @override

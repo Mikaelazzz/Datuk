@@ -1,5 +1,5 @@
 
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import shutil
@@ -14,6 +14,38 @@ import database  # SQLite database module
 from contextlib import asynccontextmanager
 import sys
 import time
+from typing import List
+
+# --- WebSocket Connection Manager ---
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+        print(f"WebSocket connected. Total: {len(self.active_connections)}", file=sys.stderr)
+
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+        print(f"WebSocket disconnected. Total: {len(self.active_connections)}", file=sys.stderr)
+
+    async def broadcast(self, message: dict):
+        """Broadcast message to all connected clients"""
+        disconnected = []
+        for connection in self.active_connections:
+            try:
+                await connection.send_json(message)
+            except Exception as e:
+                print(f"Error sending to client: {e}", file=sys.stderr)
+                disconnected.append(connection)
+        
+        # Remove disconnected clients
+        for conn in disconnected:
+            self.disconnect(conn)
+
+manager = ConnectionManager()
 
 # CORS configuration for Flutter Web
 
@@ -206,6 +238,20 @@ async def predict_cough(file: UploadFile = File(...)):
                 rekomendasi_obat=recommendations
             )
             print(f"--- [BACKEND] Saved diagnosis to database with ID: {diagnosis_id} ---")
+            
+            # Broadcast to all WebSocket clients
+            await manager.broadcast({
+                "type": "new_diagnosis",
+                "diagnosis_id": diagnosis_id,
+                "data": {
+                    "jenis_batuk": label,
+                    "confidence": confidence,
+                    "tingkat_kondisi": level,
+                    "rekomendasi_obat": recommendations
+                }
+            })
+            print(f"--- [BACKEND] Broadcasted new diagnosis to WebSocket clients ---")
+            
         except Exception as db_error:
             print(f"--- [BACKEND] Warning: Failed to save to database: {db_error} ---")
             diagnosis_id = None
@@ -276,6 +322,13 @@ async def delete_diagnosis(diagnosis_id: int):
         deleted = database.delete_diagnosis(diagnosis_id)
         if not deleted:
             raise HTTPException(status_code=404, detail="Diagnosis not found")
+        
+        # Broadcast deletion to all WebSocket clients
+        await manager.broadcast({
+            "type": "diagnosis_deleted",
+            "diagnosis_id": diagnosis_id
+        })
+        
         return {
             "status": "success",
             "message": f"Diagnosis {diagnosis_id} deleted"
@@ -297,6 +350,25 @@ async def get_statistics():
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+
+# --- WebSocket Endpoint ---
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    """WebSocket endpoint for real-time history updates."""
+    await manager.connect(websocket)
+    try:
+        while True:
+            # Keep connection alive and listen for messages
+            data = await websocket.receive_text()
+            # Handle ping/pong for connection keep-alive
+            if data == "ping":
+                await websocket.send_text("pong")
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+    except Exception as e:
+        print(f"WebSocket error: {e}", file=sys.stderr)
+        manager.disconnect(websocket)
 
 
 if __name__ == "__main__":
