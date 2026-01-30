@@ -308,10 +308,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Column(
       children: _recentHistory.map((item) {
-        // Determine badge based on diagnosis type and confidence
-        String badgeText;
-        Color badgeBgColor;
-        Color badgeTextColor;
+        // Determine icon based on diagnosis type
         IconData icon;
         Color iconColor;
         Color iconBgColor;
@@ -322,35 +319,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
           icon = Icons.water_drop;
           iconColor = const Color(0xFFF97316);
           iconBgColor = const Color(0xFFFFF7ED);
-          badgeText = 'Rawat';
-          badgeBgColor = const Color(0xFFFFEDD5);
-          badgeTextColor = const Color(0xFFEA580C);
         } else if (jenisBatuk.contains('kering') ||
             jenisBatuk.contains('dry')) {
           icon = Icons.air;
           iconColor = const Color(0xFF3B82F6);
           iconBgColor = const Color(0xFFEFF6FF);
-          badgeText = 'Pantau';
-          badgeBgColor = const Color(0xFFDBEAFE);
-          badgeTextColor = const Color(0xFF2563EB);
         } else {
           icon = Icons.check_circle;
           iconColor = AppColors.primaryDark;
           iconBgColor = AppColors.primary.withValues(alpha: 0.1);
-          badgeText = 'Sehat';
-          badgeBgColor = AppColors.primary.withValues(alpha: 0.2);
-          badgeTextColor = AppColors.primaryDark;
-        }
-
-        // Adjust badge based on confidence
-        if (item.confidence >= 0.9) {
-          badgeText = 'Rawat';
-          badgeBgColor = const Color(0xFFFFEDD5);
-          badgeTextColor = const Color(0xFFEA580C);
-        } else if (item.confidence >= 0.7) {
-          badgeText = 'Pantau';
-          badgeBgColor = const Color(0xFFDBEAFE);
-          badgeTextColor = const Color(0xFF2563EB);
         }
 
         return Padding(
@@ -374,9 +351,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               iconColor: iconColor,
               title: item.jenisBatuk,
               subtitle: '${item.formattedDate} • ${item.formattedTime}',
-              badgeText: badgeText,
-              badgeBackgroundColor: badgeBgColor,
-              badgeTextColor: badgeTextColor,
+              showBadge: false, // Hide badge on dashboard
             ),
           ),
         );

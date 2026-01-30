@@ -4,11 +4,14 @@ SQLite Database module for storing cough diagnosis history.
 import sqlite3
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from typing import List, Dict, Any, Optional
 
 # Database file path
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "diagnosis_history.db")
+
+# Western Indonesia Time (WIB) = UTC+7
+WIB = timezone(timedelta(hours=7))
 
 
 def get_connection() -> sqlite3.Connection:
@@ -64,16 +67,19 @@ def save_diagnosis(
     # Convert recommendations to JSON string
     rekomendasi_json = json.dumps(rekomendasi_obat, ensure_ascii=False) if rekomendasi_obat else None
     
+    # Use WIB timezone for timestamp
+    wib_now = datetime.now(WIB).strftime("%Y-%m-%d %H:%M:%S")
+    
     cursor.execute("""
-        INSERT INTO diagnosis_history (jenis_batuk, confidence, tingkat_kondisi, rekomendasi_obat)
-        VALUES (?, ?, ?, ?)
-    """, (jenis_batuk, confidence, tingkat_kondisi, rekomendasi_json))
+        INSERT INTO diagnosis_history (jenis_batuk, confidence, tingkat_kondisi, rekomendasi_obat, created_at)
+        VALUES (?, ?, ?, ?, ?)
+    """, (jenis_batuk, confidence, tingkat_kondisi, rekomendasi_json, wib_now))
     
     record_id = cursor.lastrowid
     conn.commit()
     conn.close()
     
-    print(f"Saved diagnosis record with ID: {record_id}")
+    print(f"Saved diagnosis record with ID: {record_id} at {wib_now} WIB")
     return record_id
 
 

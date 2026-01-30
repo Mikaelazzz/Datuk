@@ -57,30 +57,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             color: isDark ? AppColors.lightText : AppColors.darkText,
           ),
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: () {
-                  // Menu action
-                },
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  alignment: Alignment.center,
-                  child: Icon(
-                    Icons.menu,
-                    color: isDark ? AppColors.lightText : AppColors.darkText,
-                    size: 20,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+        // No actions - hamburger menu removed
       ),
     );
   }

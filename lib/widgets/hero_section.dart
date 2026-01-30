@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import '../constants/colors.dart';
 import '../constants/text_styles.dart';
 
-/// Hero section with image, gradient overlay, and text content
+/// Hero section with Lottie animation, gradient overlay, and text content
 class HeroSection extends StatefulWidget {
   const HeroSection({super.key});
 
@@ -34,38 +35,34 @@ class _HeroSectionState extends State<HeroSection> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    // Background Image
-                    AnimatedScale(
-                      scale: _isHovered ? 1.05 : 1.0,
-                      duration: const Duration(milliseconds: 700),
-                      curve: Curves.easeOut,
-                      child: Image.network(
-                        'https://lh3.googleusercontent.com/aida-public/AB6AXuBHwvTVIchiiNVPjtom7EaObs7z3_ZveTsL3qEVDMJxRdbXsG0Sy7QQol9JYxhJX9gr-U4VvK3ZBiTMDqRINEN3-fvltypeXlpQPk9soZEBOVt9NhU-1L7IOZSaeTI5Rj6F6ls1MMeo-zyOopIkvIopaJWVlpE1CHAJRFVhVgpQWUKZWABR2fM-jplivjjlPgDYgVgO5OUfU6LISDdLlatwWCHF5V5f8a-lkOEr8e595S_nWz9oeVm5Gs5HQk0rBtBODEQ-dtvlp7yb',
-                        fit: BoxFit.cover,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Container(
-                            color: AppColors.gray200,
-                            child: const Center(
-                              child: CircularProgressIndicator(
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          );
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: AppColors.gray200,
-                            child: const Icon(
-                              Icons.image_not_supported,
-                              size: 48,
-                              color: AppColors.gray400,
-                            ),
-                          );
-                        },
+                    // Background with gradient
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            AppColors.primary.withValues(alpha: 0.3),
+                            AppColors.primaryDark.withValues(alpha: 0.8),
+                          ],
+                        ),
                       ),
                     ),
-                    // Gradient Overlay
+                    // Lottie Animation
+                    Center(
+                      child: AnimatedScale(
+                        scale: _isHovered ? 1.05 : 1.0,
+                        duration: const Duration(milliseconds: 700),
+                        curve: Curves.easeOut,
+                        child: Lottie.asset(
+                          'lib/assets/dashboard.json',
+                          fit: BoxFit.contain,
+                          width: 500,
+                          height: 500,
+                        ),
+                      ),
+                    ),
+                    // Gradient Overlay for text
                     Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
@@ -73,7 +70,7 @@ class _HeroSectionState extends State<HeroSection> {
                           end: Alignment.bottomCenter,
                           colors: [
                             Colors.transparent,
-                            Colors.black.withValues(alpha: 0.1),
+                            Colors.transparent,
                             Colors.black.withValues(alpha: 0.7),
                           ],
                           stops: const [0.0, 0.5, 1.0],
@@ -91,7 +88,7 @@ class _HeroSectionState extends State<HeroSection> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              'Find clarity in your thoughts.',
+                              'Kenali batukmu lebih dalam.',
                               style: AppTextStyles.displayLarge.copyWith(
                                 color: Colors.white,
                               ),
@@ -99,7 +96,7 @@ class _HeroSectionState extends State<HeroSection> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Let Datuk listen, analyze, and guide you to a simpler understanding.',
+                              'Biarkan Datuk mendengarkan, menganalisis, dan memberikan solusi terbaik untukmu.',
                               style: AppTextStyles.bodyLarge.copyWith(
                                 color: Colors.white.withValues(alpha: 0.9),
                               ),

@@ -9,10 +9,11 @@ class HistoryItem extends StatelessWidget {
   final Color iconColor;
   final String title;
   final String subtitle;
-  final String badgeText;
-  final Color badgeBackgroundColor;
-  final Color badgeTextColor;
+  final String? badgeText;
+  final Color? badgeBackgroundColor;
+  final Color? badgeTextColor;
   final VoidCallback? onTap;
+  final bool showBadge;
 
   const HistoryItem({
     super.key,
@@ -21,10 +22,11 @@ class HistoryItem extends StatelessWidget {
     required this.iconColor,
     required this.title,
     required this.subtitle,
-    required this.badgeText,
-    required this.badgeBackgroundColor,
-    required this.badgeTextColor,
+    this.badgeText,
+    this.badgeBackgroundColor,
+    this.badgeTextColor,
     this.onTap,
+    this.showBadge = true,
   });
 
   @override
@@ -96,26 +98,29 @@ class HistoryItem extends StatelessWidget {
                 ),
               ),
 
-              // Badge
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? badgeBackgroundColor.withValues(alpha: 0.3)
-                      : badgeBackgroundColor,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  badgeText,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: badgeTextColor,
-                    fontWeight: FontWeight.bold,
+              // Badge (only show if enabled and has text)
+              if (showBadge && badgeText != null) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? (badgeBackgroundColor ?? AppColors.gray100)
+                              .withValues(alpha: 0.3)
+                        : (badgeBackgroundColor ?? AppColors.gray100),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    badgeText!,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: badgeTextColor ?? AppColors.gray400,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
         ),

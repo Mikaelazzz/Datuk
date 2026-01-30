@@ -57,16 +57,10 @@ class _FloatingCtaButtonState extends State<FloatingCtaButton> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Start Your Session',
+                      'Mulai',
                       style: AppTextStyles.buttonText.copyWith(
                         color: AppColors.darkText,
                       ),
-                    ),
-                    const SizedBox(width: 6),
-                    const Icon(
-                      Icons.arrow_forward,
-                      color: AppColors.darkText,
-                      size: 20,
                     ),
                   ],
                 ),

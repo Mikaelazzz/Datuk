@@ -48,7 +48,7 @@ class LandingPage extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         child: Text(
-                          'HOW IT WORKS',
+                          'CARA KERJA',
                           style: AppTextStyles.labelBold.copyWith(
                             color: isDark
                                 ? AppColors.primary.withValues(alpha: 0.8)
@@ -76,10 +76,10 @@ class LandingPage extends StatelessWidget {
                       // Step 1: Record
                       StepCard(
                         icon: Icons.mic,
-                        title: 'Record',
+                        title: 'Rekam',
                         description:
-                            'Just speak naturally. We\'re listening without judgment.',
-                        stepNumber: 'Step 1',
+                            'Rekam suara batukmu dengan jelas untuk hasil diagnosis yang akurat.',
+                        stepNumber: 'Langkah 1',
                         iconBackgroundColor: AppColors.primary.withValues(
                           alpha: 0.2,
                         ),
@@ -96,10 +96,10 @@ class LandingPage extends StatelessWidget {
                       // Step 2: Analyze
                       StepCard(
                         icon: Icons.psychology,
-                        title: 'Analyze',
+                        title: 'Analisis',
                         description:
-                            'Datuk processes your thoughts instantly to find patterns.',
-                        stepNumber: 'Step 2',
+                            'Datuk menganalisis suara batukmu secara instan menggunakan AI.',
+                        stepNumber: 'Langkah 2',
                         iconBackgroundColor: isDark
                             ? AppColors.blue900.withValues(alpha: 0.3)
                             : AppColors.blue100,
@@ -118,10 +118,10 @@ class LandingPage extends StatelessWidget {
                       // Step 3: Result
                       StepCard(
                         icon: Icons.lightbulb,
-                        title: 'Result',
+                        title: 'Hasil',
                         description:
-                            'Get clear, actionable insights to improve your day.',
-                        stepNumber: 'Step 3',
+                            'Dapatkan hasil diagnosis dan rekomendasi obat yang tepat.',
+                        stepNumber: 'Langkah 3',
                         iconBackgroundColor: isDark
                             ? AppColors.purple900.withValues(alpha: 0.3)
                             : AppColors.purple100,
