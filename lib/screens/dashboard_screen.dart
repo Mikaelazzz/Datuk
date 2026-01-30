@@ -7,9 +7,10 @@ import '../widgets/dashboard/history_item.dart';
 import '../widgets/dashboard/bottom_nav_bar.dart';
 import '../widgets/dashboard/audio_input_sheet.dart';
 import '../services/audio_service.dart';
+import '../services/api_service.dart';
 import 'recording_screen.dart';
 import 'processing_screen.dart';
-import 'history_screen.dart' hide HistoryItem, HistoryGroup;
+import 'history_screen.dart';
 
 /// Dashboard screen - main screen after starting session
 class DashboardScreen extends StatefulWidget {
@@ -21,6 +22,34 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedNavIndex = 0;
+
+  // History state
+  List<DiagnosisHistory> _recentHistory = [];
+  bool _isLoadingHistory = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchRecentHistory();
+  }
+
+  Future<void> _fetchRecentHistory() async {
+    try {
+      final history = await ApiService.getHistory(limit: 3);
+      if (mounted) {
+        setState(() {
+          _recentHistory = history;
+          _isLoadingHistory = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingHistory = false;
+        });
+      }
+    }
+  }
 
   /// Show audio input options (Record or Upload)
   void _showAudioInputOptions(BuildContext context) {
@@ -71,12 +100,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [
                   // Header
                   _buildHeader(isDark),
-
-                  // Status Card
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                    child: StatusCard(),
-                  ),
 
                   // Diagnose Button Section
                   Padding(
@@ -131,16 +154,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.backgroundDark.withValues(alpha: 0.9)
-            : AppColors.backgroundLight.withValues(alpha: 0.9),
+        color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
       ),
       child: Row(
         children: [
           // Logo
           Container(
-            width: 32,
-            height: 32,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
               color: AppColors.primary,
               shape: BoxShape.circle,
@@ -152,10 +173,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ],
             ),
-            child: const Icon(Icons.spa, color: AppColors.darkText, size: 18),
+            child: const Icon(Icons.spa, color: AppColors.darkText, size: 24),
           ),
-          const SizedBox(width: 8),
-          // Title
+          const SizedBox(width: 12),
+
+          // App name
           Text(
             'Datuk',
             style: AppTextStyles.headingLarge.copyWith(
@@ -206,43 +228,119 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           const SizedBox(height: 12),
 
-          // History Items
-          const HistoryItem(
-            icon: Icons.sick,
-            iconBackgroundColor: Color(0xFFFFF7ED),
-            iconColor: Color(0xFFF97316),
-            title: 'Batuk Berdahak',
-            subtitle: '2 Jan • 08:30 Pagi',
-            badgeText: 'Rawat',
-            badgeBackgroundColor: Color(0xFFFFEDD5),
-            badgeTextColor: Color(0xFFEA580C),
-          ),
-          const SizedBox(height: 12),
-
-          const HistoryItem(
-            icon: Icons.ac_unit,
-            iconBackgroundColor: Color(0xFFEFF6FF),
-            iconColor: Color(0xFF3B82F6),
-            title: 'Batuk Kering',
-            subtitle: '28 Des • 07:15 Malam',
-            badgeText: 'Pantau',
-            badgeBackgroundColor: Color(0xFFDBEAFE),
-            badgeTextColor: Color(0xFF2563EB),
-          ),
-          const SizedBox(height: 12),
-
-          HistoryItem(
-            icon: Icons.check_circle,
-            iconBackgroundColor: AppColors.primary.withValues(alpha: 0.1),
-            iconColor: AppColors.primaryDark,
-            title: 'Kondisi Membaik',
-            subtitle: '15 Des • 09:00 Pagi',
-            badgeText: 'Sehat',
-            badgeBackgroundColor: AppColors.primary.withValues(alpha: 0.2),
-            badgeTextColor: AppColors.primaryDark,
-          ),
+          // History Items from API
+          _buildHistoryContent(isDark),
         ],
       ),
+    );
+  }
+
+  Widget _buildHistoryContent(bool isDark) {
+    if (_isLoadingHistory) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: CircularProgressIndicator(
+            color: AppColors.primary,
+            strokeWidth: 2,
+          ),
+        ),
+      );
+    }
+
+    if (_recentHistory.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceDark : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.05)
+                : AppColors.gray100,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(Icons.history_toggle_off, size: 48, color: AppColors.gray400),
+            const SizedBox(height: 12),
+            Text(
+              'Belum ada riwayat',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.gray400,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Mulai diagnosa untuk melihat riwayat',
+              style: AppTextStyles.bodySmall.copyWith(color: AppColors.gray400),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: _recentHistory.map((item) {
+        // Determine badge based on diagnosis type and confidence
+        String badgeText;
+        Color badgeBgColor;
+        Color badgeTextColor;
+        IconData icon;
+        Color iconColor;
+        Color iconBgColor;
+
+        final jenisBatuk = item.jenisBatuk.toLowerCase();
+
+        if (jenisBatuk.contains('berdahak') || jenisBatuk.contains('wet')) {
+          icon = Icons.water_drop;
+          iconColor = const Color(0xFFF97316);
+          iconBgColor = const Color(0xFFFFF7ED);
+          badgeText = 'Rawat';
+          badgeBgColor = const Color(0xFFFFEDD5);
+          badgeTextColor = const Color(0xFFEA580C);
+        } else if (jenisBatuk.contains('kering') ||
+            jenisBatuk.contains('dry')) {
+          icon = Icons.air;
+          iconColor = const Color(0xFF3B82F6);
+          iconBgColor = const Color(0xFFEFF6FF);
+          badgeText = 'Pantau';
+          badgeBgColor = const Color(0xFFDBEAFE);
+          badgeTextColor = const Color(0xFF2563EB);
+        } else {
+          icon = Icons.check_circle;
+          iconColor = AppColors.primaryDark;
+          iconBgColor = AppColors.primary.withValues(alpha: 0.1);
+          badgeText = 'Sehat';
+          badgeBgColor = AppColors.primary.withValues(alpha: 0.2);
+          badgeTextColor = AppColors.primaryDark;
+        }
+
+        // Adjust badge based on confidence
+        if (item.confidence >= 0.9) {
+          badgeText = 'Rawat';
+          badgeBgColor = const Color(0xFFFFEDD5);
+          badgeTextColor = const Color(0xFFEA580C);
+        } else if (item.confidence >= 0.7) {
+          badgeText = 'Pantau';
+          badgeBgColor = const Color(0xFFDBEAFE);
+          badgeTextColor = const Color(0xFF2563EB);
+        }
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: HistoryItem(
+            icon: icon,
+            iconBackgroundColor: iconBgColor,
+            iconColor: iconColor,
+            title: item.jenisBatuk,
+            subtitle: '${item.formattedDate} • ${item.formattedTime}',
+            badgeText: badgeText,
+            badgeBackgroundColor: badgeBgColor,
+            badgeTextColor: badgeTextColor,
+          ),
+        );
+      }).toList(),
     );
   }
 }
