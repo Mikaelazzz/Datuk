@@ -8,6 +8,7 @@ import json
 import tensorflow as tf
 import numpy as np
 from preprocess import create_spectrogram, preprocess_for_model
+import database  # SQLite database module
 
 
 from contextlib import asynccontextmanager
@@ -196,6 +197,19 @@ async def predict_cough(file: UploadFile = File(...)):
         # RAG / Recommendation Logic
         recommendations = MEDICINES.get(label, [])
         
+        # Save diagnosis to database
+        try:
+            diagnosis_id = database.save_diagnosis(
+                jenis_batuk=label,
+                confidence=confidence,
+                tingkat_kondisi=level,
+                rekomendasi_obat=recommendations
+            )
+            print(f"--- [BACKEND] Saved diagnosis to database with ID: {diagnosis_id} ---")
+        except Exception as db_error:
+            print(f"--- [BACKEND] Warning: Failed to save to database: {db_error} ---")
+            diagnosis_id = None
+        
         return {
             "status": "success",
             "file": file.filename,
@@ -205,6 +219,7 @@ async def predict_cough(file: UploadFile = File(...)):
             "score_wet": score_wet,
             "threshold_used": THRESHOLD,
             "recommendations": recommendations,
+            "diagnosis_id": diagnosis_id,
             "message": "Klasifikasi berhasil."
         }
         
@@ -221,6 +236,68 @@ async def predict_cough(file: UploadFile = File(...)):
             except:
                 pass
 
+# --- History Endpoints ---
+
+@app.get("/history")
+async def get_history(limit: int = 50):
+    """Get diagnosis history, most recent first."""
+    try:
+        history = database.get_all_diagnoses(limit=limit)
+        return {
+            "status": "success",
+            "count": len(history),
+            "history": history
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+
+@app.get("/history/{diagnosis_id}")
+async def get_diagnosis_detail(diagnosis_id: int):
+    """Get a specific diagnosis by ID."""
+    try:
+        diagnosis = database.get_diagnosis_by_id(diagnosis_id)
+        if diagnosis is None:
+            raise HTTPException(status_code=404, detail="Diagnosis not found")
+        return {
+            "status": "success",
+            "diagnosis": diagnosis
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+
+@app.delete("/history/{diagnosis_id}")
+async def delete_diagnosis(diagnosis_id: int):
+    """Delete a diagnosis record by ID."""
+    try:
+        deleted = database.delete_diagnosis(diagnosis_id)
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Diagnosis not found")
+        return {
+            "status": "success",
+            "message": f"Diagnosis {diagnosis_id} deleted"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+
+@app.get("/statistics")
+async def get_statistics():
+    """Get diagnosis statistics."""
+    try:
+        stats = database.get_statistics()
+        return {
+            "status": "success",
+            "statistics": stats
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
