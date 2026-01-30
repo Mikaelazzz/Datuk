@@ -131,18 +131,12 @@ class _RecordingScreenState extends State<RecordingScreen>
             response,
           );
           bytes = responseBytes;
-          debugPrint(
-            'Web recording: fetched ${bytes!.length} bytes from blob URL',
-          );
         } catch (e) {
           debugPrint('Failed to fetch blob URL: $e');
           // Fallback: try using the http package
           try {
             final httpResponse = await http.get(Uri.parse(path));
             bytes = httpResponse.bodyBytes;
-            debugPrint(
-              'Web recording (http fallback): fetched ${bytes!.length} bytes',
-            );
           } catch (e2) {
             debugPrint('HTTP fallback also failed: $e2');
             if (mounted) {

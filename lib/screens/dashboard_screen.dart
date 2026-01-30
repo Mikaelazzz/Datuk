@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/colors.dart';
 import '../constants/text_styles.dart';
-import '../widgets/dashboard/status_card.dart';
 import '../widgets/dashboard/diagnose_button.dart';
 import '../widgets/dashboard/history_item.dart';
 import '../widgets/dashboard/bottom_nav_bar.dart';
