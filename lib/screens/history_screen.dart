@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import '../constants/colors.dart';
 import '../constants/text_styles.dart';
 import '../widgets/dashboard/bottom_nav_bar.dart';
 import '../services/api_service.dart';
 import 'dashboard_screen.dart';
+import 'history_detail_screen.dart';
 
 /// History Screen - shows diagnosis history from database with pagination
 class HistoryScreen extends StatefulWidget {
@@ -253,27 +255,95 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     if (_filteredHistory.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.history_toggle_off, size: 64, color: AppColors.gray400),
-            const SizedBox(height: 16),
-            Text(
-              _searchController.text.isEmpty
-                  ? 'Belum ada riwayat diagnosa'
-                  : 'Tidak ada hasil ditemukan',
-              style: AppTextStyles.headingMedium.copyWith(
-                color: isDark ? AppColors.lightText : AppColors.darkText,
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Lottie Animation
+              Lottie.asset(
+                'lib/assets/no_result.json',
+                width: 200,
+                height: 200,
+                fit: BoxFit.contain,
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _searchController.text.isEmpty
-                  ? 'Mulai diagnosa untuk melihat riwayat'
-                  : 'Coba kata kunci lain',
-              style: AppTextStyles.bodySmall.copyWith(color: AppColors.gray400),
-            ),
-          ],
+              const SizedBox(height: 24),
+
+              // Title
+              Text(
+                _searchController.text.isEmpty
+                    ? 'Belum Ada Riwayat'
+                    : 'Tidak Ada Hasil',
+                style: AppTextStyles.headingLarge.copyWith(
+                  color: isDark ? AppColors.lightText : AppColors.darkText,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Subtitle
+              Text(
+                _searchController.text.isEmpty
+                    ? 'Diagnosa batukmu sekarang untuk\nmemantau kesehatan pernapasanmu'
+                    : 'Coba kata kunci lain',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.gray400,
+                  height: 1.5,
+                ),
+              ),
+
+              // Button (only show when no search query)
+              if (_searchController.text.isEmpty) ...[
+                const SizedBox(height: 32),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const DashboardScreen(),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.add_circle_outline,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Mulai Diagnosa',
+                          style: AppTextStyles.buttonText.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       );
     }
@@ -764,214 +834,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
   }
 
-  void _showDiagnosisDetail(DiagnosisHistory item) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Handle bar
-            Center(
-              child: Container(
-                width: 48,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.gray300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Title
-            Text(
-              item.jenisBatuk,
-              style: AppTextStyles.headingLarge.copyWith(
-                color: isDark ? AppColors.lightText : AppColors.darkText,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            // Date and time
-            Row(
-              children: [
-                Icon(Icons.calendar_today, size: 16, color: AppColors.gray400),
-                const SizedBox(width: 8),
-                Text(
-                  '${item.formattedDate} ${item.year}',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.gray400,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Icon(Icons.schedule, size: 16, color: AppColors.gray400),
-                const SizedBox(width: 8),
-                Text(
-                  item.formattedTime,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.gray400,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Confidence
-            _buildDetailRow(
-              'Akurasi',
-              item.confidencePercent,
-              Icons.verified,
-              AppColors.primary,
-              isDark,
-            ),
-            const SizedBox(height: 12),
-
-            // Severity level
-            if (item.tingkatKondisi != null)
-              _buildDetailRow(
-                'Tingkat Kondisi',
-                item.tingkatKondisi!,
-                Icons.trending_up,
-                const Color(0xFFF97316),
-                isDark,
-              ),
-            const SizedBox(height: 24),
-
-            // Recommendations
-            if (item.rekomendasiObat != null &&
-                item.rekomendasiObat!.isNotEmpty) ...[
-              Text(
-                'Rekomendasi Obat',
-                style: AppTextStyles.headingSmall.copyWith(
-                  color: isDark ? AppColors.lightText : AppColors.darkText,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-              ...item.rekomendasiObat!.take(3).map((med) {
-                if (med is Map<String, dynamic>) {
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.05)
-                          : AppColors.gray100,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.medication,
-                          color: AppColors.primaryDark,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            med['name']?.toString() ?? 'Unknown',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: isDark
-                                  ? AppColors.lightText
-                                  : AppColors.darkText,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-                return const SizedBox.shrink();
-              }),
-            ],
-
-            const SizedBox(height: 24),
-
-            // Close button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text('Tutup'),
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
+  void _showDiagnosisDetail(DiagnosisHistory item) async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => HistoryDetailScreen(diagnosis: item),
       ),
     );
-  }
 
-  Widget _buildDetailRow(
-    String label,
-    String value,
-    IconData icon,
-    Color color,
-    bool isDark,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.05)
-            : color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.gray400,
-                  ),
-                ),
-                Text(
-                  value,
-                  style: AppTextStyles.headingSmall.copyWith(
-                    color: isDark ? AppColors.lightText : AppColors.darkText,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+    // Refresh if item was deleted
+    if (result == true) {
+      _fetchHistory(refresh: true);
+    }
   }
 }
 

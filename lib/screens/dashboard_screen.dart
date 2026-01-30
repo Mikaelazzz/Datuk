@@ -11,6 +11,7 @@ import '../services/api_service.dart';
 import 'recording_screen.dart';
 import 'processing_screen.dart';
 import 'history_screen.dart';
+import 'history_detail_screen.dart';
 
 /// Dashboard screen - main screen after starting session
 class DashboardScreen extends StatefulWidget {
@@ -329,15 +330,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
-          child: HistoryItem(
-            icon: icon,
-            iconBackgroundColor: iconBgColor,
-            iconColor: iconColor,
-            title: item.jenisBatuk,
-            subtitle: '${item.formattedDate} • ${item.formattedTime}',
-            badgeText: badgeText,
-            badgeBackgroundColor: badgeBgColor,
-            badgeTextColor: badgeTextColor,
+          child: GestureDetector(
+            onTap: () async {
+              final result = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => HistoryDetailScreen(diagnosis: item),
+                ),
+              );
+              // Refresh if item was deleted
+              if (result == true) {
+                _fetchRecentHistory();
+              }
+            },
+            child: HistoryItem(
+              icon: icon,
+              iconBackgroundColor: iconBgColor,
+              iconColor: iconColor,
+              title: item.jenisBatuk,
+              subtitle: '${item.formattedDate} • ${item.formattedTime}',
+              badgeText: badgeText,
+              badgeBackgroundColor: badgeBgColor,
+              badgeTextColor: badgeTextColor,
+            ),
           ),
         );
       }).toList(),
