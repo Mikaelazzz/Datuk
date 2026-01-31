@@ -196,18 +196,6 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
 
                 const Spacer(flex: 2),
-
-                // Footer
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 32),
-                  child: Text(
-                    'Powered by AI',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.gray400,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
