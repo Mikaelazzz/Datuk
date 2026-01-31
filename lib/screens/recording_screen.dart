@@ -3,10 +3,9 @@ import 'package:flutter/foundation.dart'; // For kIsWeb and consolidateHttpClien
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
-import 'dart:typed_data'; // For Uint8List
 import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
+// import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
 import '../constants/colors.dart';
 import '../constants/text_styles.dart';
