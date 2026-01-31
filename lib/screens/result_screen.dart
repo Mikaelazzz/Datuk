@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/colors.dart';
 import '../constants/text_styles.dart';
+import 'dashboard_screen.dart';
 
 /// Diagnostic Result Screen - shows the diagnosis result after AI processing
 class ResultScreen extends StatelessWidget {
@@ -109,27 +110,8 @@ class ResultScreen extends StatelessWidget {
             ),
           ),
 
-          // Share button
-          GestureDetector(
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Fitur share akan segera hadir')),
-              );
-            },
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.ios_share,
-                color: isDark ? AppColors.lightText : AppColors.darkText,
-                size: 20,
-              ),
-            ),
-          ),
+          // Empty spacer for symmetry
+          const SizedBox(width: 40),
         ],
       ),
     );
@@ -590,7 +572,13 @@ class ResultScreen extends StatelessWidget {
             // Re-record button
             GestureDetector(
               onTap: () {
-                Navigator.popUntil(context, (route) => route.isFirst);
+                // Navigate to DashboardScreen (Mulai Diagnosa page)
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DashboardScreen(),
+                  ),
+                );
               },
               child: Container(
                 width: double.infinity,

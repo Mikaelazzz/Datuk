@@ -3,9 +3,6 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'dart:typed_data';
 
-import 'dart:io';
-import 'package:flutter/foundation.dart';
-
 /// Model for diagnosis history from database
 class DiagnosisHistory {
   final int id;
@@ -123,22 +120,8 @@ class DiagnosisHistory {
 }
 
 class ApiService {
-  // Production URL - will be set after deploying to Render
-  // Build with: flutter build apk --dart-define=BACKEND_URL=https://your-app.onrender.com
-  static const String _productionUrl = String.fromEnvironment(
-    'BACKEND_URL',
-    defaultValue: '',
-  );
-
-  static String get baseUrl {
-    // Use production URL if provided via --dart-define
-    if (_productionUrl.isNotEmpty) return _productionUrl;
-
-    // Fallback for local development
-    if (kIsWeb) return 'http://localhost:8000';
-    if (Platform.isAndroid) return 'http://10.0.2.2:8000';
-    return 'http://127.0.0.1:8000'; // Windows, iOS, macOS, Linux
-  }
+  // Production URL - Hugging Face Spaces (used for ALL platforms)
+  static const String baseUrl = 'https://vel1xi-datuk-backend.hf.space';
 
   /// Predict cough type from audio file path
   static Future<Map<String, dynamic>> predictCough(String filePath) async {

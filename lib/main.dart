@@ -7,7 +7,7 @@ import 'package:device_preview/device_preview.dart';
 void main() {
   runApp(
     DevicePreview(
-      enabled: true, // Set to false untuk disable device preview
+      enabled: false, // Set to false untuk disable device preview
       builder: (context) => const DatukApp(),
     ),
   );
