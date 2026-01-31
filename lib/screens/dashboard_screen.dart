@@ -12,6 +12,7 @@ import 'processing_screen.dart';
 import 'history_screen.dart';
 import 'history_detail_screen.dart';
 import '../services/websocket_service.dart';
+import '../services/theme_service.dart';
 import 'dart:async';
 
 /// Dashboard screen - main screen after starting session
@@ -204,6 +205,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
             style: AppTextStyles.headingLarge.copyWith(
               color: isDark ? AppColors.lightText : AppColors.darkText,
               fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const Spacer(),
+
+          // Theme toggle button
+          GestureDetector(
+            onTap: () {
+              ThemeService().toggleTheme();
+            },
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.black.withValues(alpha: 0.05),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isDark ? Icons.light_mode : Icons.dark_mode,
+                color: isDark ? AppColors.lightText : AppColors.darkText,
+                size: 22,
+              ),
             ),
           ),
         ],

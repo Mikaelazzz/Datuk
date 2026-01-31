@@ -3,6 +3,7 @@ import 'config/theme.dart';
 import 'screens/landing_page.dart';
 import 'widgets/connectivity_wrapper.dart';
 import 'package:device_preview/device_preview.dart';
+import 'services/theme_service.dart';
 
 void main() {
   runApp(
@@ -13,8 +14,31 @@ void main() {
   );
 }
 
-class DatukApp extends StatelessWidget {
+class DatukApp extends StatefulWidget {
   const DatukApp({super.key});
+
+  @override
+  State<DatukApp> createState() => _DatukAppState();
+}
+
+class _DatukAppState extends State<DatukApp> {
+  final ThemeService _themeService = ThemeService();
+
+  @override
+  void initState() {
+    super.initState();
+    _themeService.addListener(_onThemeChanged);
+  }
+
+  @override
+  void dispose() {
+    _themeService.removeListener(_onThemeChanged);
+    super.dispose();
+  }
+
+  void _onThemeChanged() {
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,9 +47,12 @@ class DatukApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode:
-          ThemeMode.light, // Change to ThemeMode.system for auto dark mode
-      home: const ConnectivityWrapper(child: LandingPage()),
+      themeMode: _themeService.themeMode,
+      builder: (context, child) {
+        // Wrap all routes with ConnectivityWrapper
+        return ConnectivityWrapper(child: child ?? const SizedBox.shrink());
+      },
+      home: const LandingPage(),
     );
   }
 }

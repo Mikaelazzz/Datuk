@@ -6,8 +6,9 @@ import '../constants/text_styles.dart';
 /// No Internet Screen - displayed when there's no internet connection
 class NoInternetScreen extends StatelessWidget {
   final VoidCallback? onRetry;
+  final bool isRetrying;
 
-  const NoInternetScreen({super.key, this.onRetry});
+  const NoInternetScreen({super.key, this.onRetry, this.isRetrying = false});
 
   @override
   Widget build(BuildContext context) {
@@ -117,12 +118,14 @@ class NoInternetScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       child: GestureDetector(
-        onTap: onRetry ?? () => Navigator.pop(context),
+        onTap: isRetrying ? null : onRetry,
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
-            color: AppColors.primary,
+            color: isRetrying
+                ? AppColors.primary.withValues(alpha: 0.6)
+                : AppColors.primary,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -135,15 +138,34 @@ class NoInternetScreen extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.refresh, color: Colors.white, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                'Coba Lagi',
-                style: AppTextStyles.buttonText.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+              if (isRetrying) ...[
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                Text(
+                  'Memeriksa...',
+                  style: AppTextStyles.buttonText.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ] else ...[
+                Icon(Icons.refresh, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Coba Lagi',
+                  style: AppTextStyles.buttonText.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ],
           ),
         ),

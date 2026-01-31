@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../constants/colors.dart';
 import '../constants/text_styles.dart';
 import '../services/api_service.dart';
+import 'history_screen.dart';
 
 /// Detail screen for viewing a specific diagnosis history
 class HistoryDetailScreen extends StatelessWidget {
@@ -857,12 +858,14 @@ class HistoryDetailScreen extends StatelessWidget {
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  void _showDeleteConfirmation(BuildContext parentContext) {
+    final isDark = Theme.of(parentContext).brightness == Brightness.dark;
+    final scaffoldMessenger = ScaffoldMessenger.of(parentContext);
+    final navigator = Navigator.of(parentContext);
 
     showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
+      context: parentContext,
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
@@ -877,35 +880,49 @@ class HistoryDetailScreen extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text('Batal', style: TextStyle(color: AppColors.gray400)),
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.pop(context); // Close dialog
+              // Close dialog first
+              Navigator.pop(dialogContext);
+
               try {
                 await ApiService.deleteDiagnosis(diagnosis.id);
-                if (context.mounted) {
-                  Navigator.pop(
-                    context,
-                    true,
-                  ); // Return to history with refresh flag
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Riwayat berhasil dihapus'),
-                      backgroundColor: Colors.green,
+
+                // Show toast using captured scaffoldMessenger
+                scaffoldMessenger.showSnackBar(
+                  SnackBar(
+                    content: Row(
+                      children: [
+                        Icon(Icons.check_circle, color: Colors.white, size: 20),
+                        SizedBox(width: 12),
+                        Text('Riwayat berhasil dihapus'),
+                      ],
                     ),
-                  );
-                }
+                    backgroundColor: Colors.green,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    margin: EdgeInsets.all(16),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+
+                // Wait 1 second then navigate using captured navigator
+                await Future.delayed(const Duration(seconds: 1));
+                navigator.pushReplacement(
+                  MaterialPageRoute(builder: (_) => const HistoryScreen()),
+                );
               } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Gagal menghapus: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
+                scaffoldMessenger.showSnackBar(
+                  SnackBar(
+                    content: Text('Gagal menghapus: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
               }
             },
             style: ElevatedButton.styleFrom(
