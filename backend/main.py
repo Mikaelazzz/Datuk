@@ -93,11 +93,30 @@ async def lifespan(app: FastAPI):
         # Go up one level to find the model
         project_root = os.path.dirname(base_dir) # d:\APLAI\project UAS\Datuk
         
+        # Model file path in backend folder
+        model_file_path = os.path.join(base_dir, "temp_model.keras")
+        
+        # --- Google Drive Download ---
+        # If model doesn't exist locally, download from Google Drive
+        GDRIVE_FILE_ID = "1ESTe8JzMu_rerVCgvrDJrTqcUm61AA4v"
+        
+        if not os.path.exists(model_file_path):
+            print("Model not found locally. Downloading from Google Drive...", file=sys.stderr)
+            try:
+                import gdown
+                gdrive_url = f"https://drive.google.com/uc?id={GDRIVE_FILE_ID}"
+                gdown.download(gdrive_url, model_file_path, quiet=False)
+                print(f"Model downloaded successfully to {model_file_path}", file=sys.stderr)
+            except Exception as download_error:
+                print(f"Failed to download model from Google Drive: {download_error}", file=sys.stderr)
+                raise
+        
         # Possible model locations (in order of priority)
         model_paths_to_try = [
-            os.path.join(base_dir, "temp_model_zipped.keras"),  # 1. Cached zip in backend/
-            os.path.join(project_root, "final_cough_model.keras"),  # 2. .keras file in root
-            os.path.join(project_root, "final_cough_model"),  # 3. Directory in root
+            model_file_path,  # 1. Downloaded model in backend/
+            os.path.join(base_dir, "temp_model_zipped.keras"),  # 2. Cached zip in backend/
+            os.path.join(project_root, "final_cough_model.keras"),  # 3. .keras file in root
+            os.path.join(project_root, "final_cough_model"),  # 4. Directory in root
         ]
         
         load_path = None
