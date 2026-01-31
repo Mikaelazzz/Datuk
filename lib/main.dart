@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'config/theme.dart';
-import 'screens/landing_page.dart';
+import 'screens/splash_screen.dart';
 import 'widgets/connectivity_wrapper.dart';
 import 'package:device_preview/device_preview.dart';
 import 'services/theme_service.dart';
@@ -52,7 +52,7 @@ class _DatukAppState extends State<DatukApp> {
         // Wrap all routes with ConnectivityWrapper
         return ConnectivityWrapper(child: child ?? const SizedBox.shrink());
       },
-      home: const LandingPage(),
+      home: const SplashScreen(),
     );
   }
 }
