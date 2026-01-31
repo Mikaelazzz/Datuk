@@ -108,25 +108,6 @@ Sticky bottom button with:
 - Arrow icon with animation
 - Tap feedback
 
-## 🌙 Dark Mode
-
-To enable dark mode, change the `themeMode` in `lib/main.dart`:
-
-```dart
-themeMode: ThemeMode.dark,  // or ThemeMode.system for auto
-```
-
-## 🎨 Customization
-
-### Colors
-Edit `lib/constants/colors.dart` to change the color scheme.
-
-### Typography
-Modify `lib/constants/text_styles.dart` to adjust font styles.
-
-### Theme
-Update `lib/config/theme.dart` for overall theme changes.
-
 ## 📦 Dependencies
 
 - `google_fonts: ^6.2.1` - For Plus Jakarta Sans font family
@@ -164,11 +145,3 @@ The app replicates the original HTML design with:
 - Ensure Flutter SDK is up to date: `flutter upgrade`
 - Check Dart SDK version compatibility
 - Run `flutter doctor` to diagnose issues
-
-## 📝 License
-
-This project is part of the Datuk application.
-
-## 👨‍💻 Author
-
-Created as a Flutter conversion of the original HTML/Tailwind CSS landing page.
