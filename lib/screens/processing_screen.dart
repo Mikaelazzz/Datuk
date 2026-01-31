@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'dart:math' as math;
 import '../constants/colors.dart';
 import '../constants/text_styles.dart';
+import '../services/api_service.dart';
 import 'result_screen.dart';
 
 /// AI Processing screen - shows while analyzing the cough recording
@@ -65,17 +66,8 @@ class _ProcessingScreenState extends State<ProcessingScreen>
     }
 
     try {
-      // Determine the API base URL based on the platform
-      String baseUrl;
-      if (kIsWeb) {
-        baseUrl = 'http://127.0.0.1:8000';
-      } else if (Platform.isAndroid) {
-        baseUrl = 'http://10.0.2.2:8000';
-      } else {
-        baseUrl = 'http://127.0.0.1:8000';
-      }
-
-      final uri = Uri.parse('$baseUrl/predict');
+      // Use centralized API base URL from ApiService
+      final uri = Uri.parse('${ApiService.baseUrl}/predict');
       debugPrint('Connecting to API at: $uri');
 
       final request = http.MultipartRequest('POST', uri);

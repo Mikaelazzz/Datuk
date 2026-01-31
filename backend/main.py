@@ -162,6 +162,16 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
+# --- Health Check Endpoint (for Render) ---
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring."""
+    return {
+        "status": "healthy",
+        "model_loaded": model is not None,
+        "medicines_loaded": len(MEDICINES) > 0
+    }
+
 # --- API Endpoints ---
 
 

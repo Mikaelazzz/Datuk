@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'api_service.dart';
 
 /// WebSocket service for real-time history updates
 class WebSocketService {
@@ -25,23 +26,22 @@ class WebSocketService {
   Stream<Map<String, dynamic>> get eventStream => _eventController.stream;
   bool get isConnected => _isConnected;
 
+  /// Get WebSocket URL derived from ApiService.baseUrl
+  static String get _wsUrl {
+    final httpUrl = ApiService.baseUrl;
+    // Convert http(s):// to ws(s)://
+    final wsUrl = httpUrl
+        .replaceFirst('https://', 'wss://')
+        .replaceFirst('http://', 'ws://');
+    return '$wsUrl/ws';
+  }
+
   /// Connect to WebSocket server
   Future<void> connect() async {
     if (_isConnected) return;
 
     try {
-      // Determine WebSocket URL based on platform
-      String wsUrl;
-      if (kIsWeb) {
-        // For web, use the same host as the page
-        final uri = Uri.base;
-        final wsProtocol = uri.scheme == 'https' ? 'wss' : 'ws';
-        wsUrl = '$wsProtocol://${uri.host}:8000/ws';
-      } else {
-        // For mobile/desktop, use localhost or your server IP
-        wsUrl = 'ws://localhost:8000/ws';
-      }
-
+      final wsUrl = _wsUrl;
       debugPrint('WebSocket: Connecting to $wsUrl');
 
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));

@@ -1,0 +1,12 @@
+name: record_linux
+description: Stub package to replace record_linux for Flutter master channel compatibility
+version: 1.1.0
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  record_platform_interface: ^1.1.0

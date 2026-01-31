@@ -123,7 +123,18 @@ class DiagnosisHistory {
 }
 
 class ApiService {
+  // Production URL - will be set after deploying to Render
+  // Build with: flutter build apk --dart-define=BACKEND_URL=https://your-app.onrender.com
+  static const String _productionUrl = String.fromEnvironment(
+    'BACKEND_URL',
+    defaultValue: '',
+  );
+
   static String get baseUrl {
+    // Use production URL if provided via --dart-define
+    if (_productionUrl.isNotEmpty) return _productionUrl;
+
+    // Fallback for local development
     if (kIsWeb) return 'http://localhost:8000';
     if (Platform.isAndroid) return 'http://10.0.2.2:8000';
     return 'http://127.0.0.1:8000'; // Windows, iOS, macOS, Linux
