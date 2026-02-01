@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import '../constants/colors.dart';
 import '../constants/text_styles.dart';
 import '../services/user_service.dart';
 import 'landing_page.dart';
+import 'dashboard_screen.dart';
 
 /// Splash screen with loading animation and progress bar
 class SplashScreen extends StatefulWidget {
@@ -16,12 +18,15 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
+  static const String _hasSeenLandingKey = 'datuk_has_seen_landing';
+
   double _progress = 0.0;
   Timer? _timer;
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
   bool _userInitialized = false;
   bool _progressComplete = false;
+  bool _isFirstTime = true;
   String _statusText = 'Memuat...';
 
   @override
@@ -46,6 +51,11 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _initializeApp() async {
     // Start progress animation
     _startProgress();
+
+    // Check if user has seen landing page before
+    final prefs = await SharedPreferences.getInstance();
+    _isFirstTime = !(prefs.getBool(_hasSeenLandingKey) ?? false);
+    print('[SplashScreen] Is first time user: $_isFirstTime');
 
     // Initialize user service
     try {
@@ -90,16 +100,44 @@ class _SplashScreenState extends State<SplashScreen>
       print(
         '[SplashScreen] Both conditions met, navigating. User ID: ${UserService.userId}',
       );
-      _navigateToLanding();
+      print('[SplashScreen] First time user: $_isFirstTime');
+
+      if (_isFirstTime) {
+        // First time: Show landing page, then mark as seen
+        _navigateToLanding();
+      } else {
+        // Returning user: Skip landing, go directly to dashboard
+        _navigateToDashboard();
+      }
     }
   }
 
-  void _navigateToLanding() {
+  void _navigateToLanding() async {
+    // Mark that user has seen landing page
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_hasSeenLandingKey, true);
+
+    if (!mounted) return;
+
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
             const LandingPage(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 500),
+      ),
+    );
+  }
+
+  void _navigateToDashboard() {
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const DashboardScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },
