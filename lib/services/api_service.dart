@@ -122,16 +122,19 @@ class DiagnosisHistory {
 
 class ApiService {
   // Production URL - Hugging Face Spaces
-  static const String productionUrl = 'https://vel1xi-datuk-backend.hf.space';
+  // static const String productionUrl = 'https://vel1xi-datuk-backend.hf.space';
 
-  // Local development URL
-  static const String localUrl = 'http://localhost:8000';
+  // // Local development URL
+  // static const String localUrl = 'http://localhost:8000';
 
-  // Toggle this for testing (true = localhost, false = production)
-  static const bool useLocalhost = true;
+  // // Toggle this for testing (true = localhost, false = production)
+  // static const bool useLocalhost = true;
 
-  // Get the active base URL
-  static String get baseUrl => useLocalhost ? localUrl : productionUrl;
+  // // Get the active base URL
+  // static String get baseUrl => useLocalhost ? localUrl : productionUrl;
+
+  // Production URL - Hugging Face Spaces
+  static const String baseUrl = 'https://vel1xi-datuk-backend.hf.space';
 
   /// Get headers with user ID
   static Map<String, String> _getHeaders() {
