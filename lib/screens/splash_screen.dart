@@ -3,6 +3,7 @@ import 'package:lottie/lottie.dart';
 import 'dart:async';
 import '../constants/colors.dart';
 import '../constants/text_styles.dart';
+import '../services/user_service.dart';
 import 'landing_page.dart';
 
 /// Splash screen with loading animation and progress bar
@@ -19,6 +20,9 @@ class _SplashScreenState extends State<SplashScreen>
   Timer? _timer;
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
+  bool _userInitialized = false;
+  bool _progressComplete = false;
+  String _statusText = 'Memuat...';
 
   @override
   void initState() {
@@ -35,8 +39,29 @@ class _SplashScreenState extends State<SplashScreen>
     ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeIn));
     _fadeController.forward();
 
+    // Initialize user and start progress
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
     // Start progress animation
     _startProgress();
+
+    // Initialize user service
+    try {
+      setState(() => _statusText = 'Menyiapkan pengguna...');
+      await UserService.initialize();
+      _userInitialized = true;
+      setState(() => _statusText = 'Siap!');
+      print('[SplashScreen] User initialized: ${UserService.userId}');
+    } catch (e) {
+      print('[SplashScreen] User initialization failed: $e');
+      setState(() => _statusText = 'Lanjutkan...');
+      _userInitialized = true; // Continue anyway
+    }
+
+    // Check if we can navigate (both progress complete and user initialized)
+    _checkAndNavigate();
   }
 
   void _startProgress() {
@@ -51,10 +76,22 @@ class _SplashScreenState extends State<SplashScreen>
         if (_progress >= 1.0) {
           _progress = 1.0;
           timer.cancel();
-          _navigateToLanding();
+          _progressComplete = true;
+          // Check if we can navigate
+          _checkAndNavigate();
         }
       });
     });
+  }
+
+  void _checkAndNavigate() {
+    // Only navigate when BOTH progress is complete AND user is initialized
+    if (_progressComplete && _userInitialized) {
+      print(
+        '[SplashScreen] Both conditions met, navigating. User ID: ${UserService.userId}',
+      );
+      _navigateToLanding();
+    }
   }
 
   void _navigateToLanding() {
@@ -183,12 +220,20 @@ class _SplashScreenState extends State<SplashScreen>
 
                       const SizedBox(height: 12),
 
-                      // Percentage text
+                      // Percentage text and status
                       Text(
                         '${(_progress * 100).toInt()}%',
                         style: AppTextStyles.bodySmall.copyWith(
                           color: AppColors.gray400,
                           fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _statusText,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.gray400,
+                          fontSize: 11,
                         ),
                       ),
                     ],

@@ -8,6 +8,7 @@ import 'dart:math' as math;
 import '../constants/colors.dart';
 import '../constants/text_styles.dart';
 import '../services/api_service.dart';
+import '../services/user_service.dart';
 import 'result_screen.dart';
 
 /// AI Processing screen - shows while analyzing the cough recording
@@ -65,8 +66,13 @@ class _ProcessingScreenState extends State<ProcessingScreen>
     }
 
     try {
-      // Use centralized API base URL from ApiService
-      final uri = Uri.parse('${ApiService.baseUrl}/predict');
+      // Use centralized API base URL from ApiService with user_id
+      var predictUrl = '${ApiService.baseUrl}/predict';
+      if (UserService.userId != null) {
+        predictUrl =
+            '${ApiService.baseUrl}/predict?user_id=${UserService.userId}';
+      }
+      final uri = Uri.parse(predictUrl);
       debugPrint('Connecting to API at: $uri');
 
       final request = http.MultipartRequest('POST', uri);

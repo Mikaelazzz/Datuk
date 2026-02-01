@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'dart:typed_data';
+import 'user_service.dart';
 
 /// Model for diagnosis history from database
 class DiagnosisHistory {
@@ -120,16 +121,41 @@ class DiagnosisHistory {
 }
 
 class ApiService {
-  // Production URL - Hugging Face Spaces (used for ALL platforms)
-  static const String baseUrl = 'https://vel1xi-datuk-backend.hf.space';
+  // Production URL - Hugging Face Spaces
+  static const String productionUrl = 'https://vel1xi-datuk-backend.hf.space';
+
+  // Local development URL
+  static const String localUrl = 'http://localhost:8000';
+
+  // Toggle this for testing (true = localhost, false = production)
+  static const bool useLocalhost = true;
+
+  // Get the active base URL
+  static String get baseUrl => useLocalhost ? localUrl : productionUrl;
+
+  /// Get headers with user ID
+  static Map<String, String> _getHeaders() {
+    final headers = <String, String>{'Content-Type': 'application/json'};
+
+    // Add user ID if available
+    if (UserService.userId != null) {
+      headers['x-user-id'] = UserService.userId!;
+    }
+
+    return headers;
+  }
 
   /// Predict cough type from audio file path
   static Future<Map<String, dynamic>> predictCough(String filePath) async {
     try {
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('$baseUrl/predict'),
-      );
+      // Build URL with user_id as query parameter
+      var url = '$baseUrl/predict';
+      if (UserService.userId != null) {
+        url = '$baseUrl/predict?user_id=${UserService.userId}';
+      }
+
+      var request = http.MultipartRequest('POST', Uri.parse(url));
+
       request.files.add(
         await http.MultipartFile.fromPath(
           'file',
@@ -159,10 +185,14 @@ class ApiService {
     String filename,
   ) async {
     try {
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('$baseUrl/predict'),
-      );
+      // Build URL with user_id as query parameter
+      var url = '$baseUrl/predict';
+      if (UserService.userId != null) {
+        url = '$baseUrl/predict?user_id=${UserService.userId}';
+      }
+
+      var request = http.MultipartRequest('POST', Uri.parse(url));
+
       request.files.add(
         http.MultipartFile.fromBytes(
           'file',
@@ -187,11 +217,12 @@ class ApiService {
     }
   }
 
-  /// Get diagnosis history from backend
+  /// Get diagnosis history from backend (filtered by user)
   static Future<List<DiagnosisHistory>> getHistory({int limit = 50}) async {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/history?limit=$limit'),
+        headers: _getHeaders(),
       );
 
       if (response.statusCode == 200) {
@@ -215,7 +246,10 @@ class ApiService {
   /// Get a specific diagnosis by ID
   static Future<DiagnosisHistory> getDiagnosisById(int id) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/history/$id'));
+      final response = await http.get(
+        Uri.parse('$baseUrl/history/$id'),
+        headers: _getHeaders(),
+      );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -237,7 +271,10 @@ class ApiService {
   /// Delete a diagnosis by ID
   static Future<bool> deleteDiagnosis(int id) async {
     try {
-      final response = await http.delete(Uri.parse('$baseUrl/history/$id'));
+      final response = await http.delete(
+        Uri.parse('$baseUrl/history/$id'),
+        headers: _getHeaders(),
+      );
 
       if (response.statusCode == 200) {
         return true;
@@ -253,10 +290,13 @@ class ApiService {
     }
   }
 
-  /// Get diagnosis statistics
+  /// Get diagnosis statistics (filtered by user)
   static Future<Map<String, dynamic>> getStatistics() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/statistics'));
+      final response = await http.get(
+        Uri.parse('$baseUrl/statistics'),
+        headers: _getHeaders(),
+      );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -268,6 +308,27 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Failed to fetch statistics: $e');
+    }
+  }
+
+  /// Register user with backend
+  static Future<Map<String, dynamic>> registerUser(String userId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/users'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'user_id': userId}),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception(
+          'Server returned status ${response.statusCode}: ${response.body}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Failed to register user: $e');
     }
   }
 }

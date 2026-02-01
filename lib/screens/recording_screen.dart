@@ -177,6 +177,10 @@ class _RecordingScreenState extends State<RecordingScreen>
 
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
       setState(() {
         _seconds++;
       });

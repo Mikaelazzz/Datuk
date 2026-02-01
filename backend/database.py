@@ -1,5 +1,5 @@
 """
-SQLite Database module for storing cough diagnosis history.
+SQLite Database module for storing cough diagnosis history with user management.
 """
 import sqlite3
 import json
@@ -26,28 +26,114 @@ def init_database():
     conn = get_connection()
     cursor = conn.cursor()
     
-    # Create diagnosis_history table
+    # Create users table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id TEXT PRIMARY KEY,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    
+    # Create diagnosis_history table with user_id foreign key
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS diagnosis_history (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT,
             jenis_batuk TEXT NOT NULL,
             confidence REAL NOT NULL,
             tingkat_kondisi TEXT,
             rekomendasi_obat TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
         )
     """)
+    
+    # Add user_id column to existing table if it doesn't exist (migration)
+    try:
+        cursor.execute("ALTER TABLE diagnosis_history ADD COLUMN user_id TEXT")
+        print("Added user_id column to diagnosis_history table")
+    except sqlite3.OperationalError:
+        # Column already exists
+        pass
     
     conn.commit()
     conn.close()
     print(f"Database initialized at: {DB_PATH}")
 
 
+def create_or_get_user(user_id: str) -> Dict[str, Any]:
+    """
+    Create a new user or get existing user by ID.
+    
+    Args:
+        user_id: UUID string for the user
+        
+    Returns:
+        Dictionary with user info
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    # Check if user exists
+    cursor.execute("SELECT id, created_at FROM users WHERE id = ?", (user_id,))
+    row = cursor.fetchone()
+    
+    if row:
+        conn.close()
+        return {
+            "id": row['id'],
+            "created_at": row['created_at'],
+            "is_new": False
+        }
+    
+    # Create new user
+    wib_now = datetime.now(WIB).strftime("%Y-%m-%d %H:%M:%S")
+    cursor.execute(
+        "INSERT INTO users (id, created_at) VALUES (?, ?)",
+        (user_id, wib_now)
+    )
+    conn.commit()
+    conn.close()
+    
+    print(f"Created new user: {user_id} at {wib_now} WIB")
+    return {
+        "id": user_id,
+        "created_at": wib_now,
+        "is_new": True
+    }
+
+
+def get_user(user_id: str) -> Optional[Dict[str, Any]]:
+    """
+    Get user by ID.
+    
+    Args:
+        user_id: UUID string for the user
+        
+    Returns:
+        User dict or None if not found
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT id, created_at FROM users WHERE id = ?", (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+    
+    if row:
+        return {
+            "id": row['id'],
+            "created_at": row['created_at']
+        }
+    return None
+
+
 def save_diagnosis(
     jenis_batuk: str,
     confidence: float,
     tingkat_kondisi: str = None,
-    rekomendasi_obat: List[Dict[str, Any]] = None
+    rekomendasi_obat: List[Dict[str, Any]] = None,
+    user_id: str = None
 ) -> int:
     """
     Save a diagnosis result to the database.
@@ -57,6 +143,7 @@ def save_diagnosis(
         confidence: Confidence score (0.0 - 1.0)
         tingkat_kondisi: Severity level (e.g., "Ringan", "Sedang", "Tingkat Lanjut")
         rekomendasi_obat: List of medicine recommendations as dicts
+        user_id: UUID of the user (optional for backwards compatibility)
         
     Returns:
         The ID of the inserted record
@@ -71,24 +158,25 @@ def save_diagnosis(
     wib_now = datetime.now(WIB).strftime("%Y-%m-%d %H:%M:%S")
     
     cursor.execute("""
-        INSERT INTO diagnosis_history (jenis_batuk, confidence, tingkat_kondisi, rekomendasi_obat, created_at)
-        VALUES (?, ?, ?, ?, ?)
-    """, (jenis_batuk, confidence, tingkat_kondisi, rekomendasi_json, wib_now))
+        INSERT INTO diagnosis_history (user_id, jenis_batuk, confidence, tingkat_kondisi, rekomendasi_obat, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (user_id, jenis_batuk, confidence, tingkat_kondisi, rekomendasi_json, wib_now))
     
     record_id = cursor.lastrowid
     conn.commit()
     conn.close()
     
-    print(f"Saved diagnosis record with ID: {record_id} at {wib_now} WIB")
+    print(f"Saved diagnosis record with ID: {record_id} for user: {user_id} at {wib_now} WIB")
     return record_id
 
 
-def get_all_diagnoses(limit: int = 50) -> List[Dict[str, Any]]:
+def get_all_diagnoses(limit: int = 50, user_id: str = None) -> List[Dict[str, Any]]:
     """
     Get all diagnosis records, most recent first.
     
     Args:
         limit: Maximum number of records to return
+        user_id: Filter by user ID (optional)
         
     Returns:
         List of diagnosis records as dictionaries
@@ -96,12 +184,22 @@ def get_all_diagnoses(limit: int = 50) -> List[Dict[str, Any]]:
     conn = get_connection()
     cursor = conn.cursor()
     
-    cursor.execute("""
-        SELECT id, jenis_batuk, confidence, tingkat_kondisi, rekomendasi_obat, created_at
-        FROM diagnosis_history
-        ORDER BY created_at DESC
-        LIMIT ?
-    """, (limit,))
+    if user_id:
+        # Include records that match user_id OR have NULL user_id (backwards compatibility)
+        cursor.execute("""
+            SELECT id, user_id, jenis_batuk, confidence, tingkat_kondisi, rekomendasi_obat, created_at
+            FROM diagnosis_history
+            WHERE user_id = ? OR user_id IS NULL
+            ORDER BY created_at DESC
+            LIMIT ?
+        """, (user_id, limit))
+    else:
+        cursor.execute("""
+            SELECT id, user_id, jenis_batuk, confidence, tingkat_kondisi, rekomendasi_obat, created_at
+            FROM diagnosis_history
+            ORDER BY created_at DESC
+            LIMIT ?
+        """, (limit,))
     
     rows = cursor.fetchall()
     conn.close()
@@ -131,7 +229,7 @@ def get_diagnosis_by_id(diagnosis_id: int) -> Optional[Dict[str, Any]]:
     cursor = conn.cursor()
     
     cursor.execute("""
-        SELECT id, jenis_batuk, confidence, tingkat_kondisi, rekomendasi_obat, created_at
+        SELECT id, user_id, jenis_batuk, confidence, tingkat_kondisi, rekomendasi_obat, created_at
         FROM diagnosis_history
         WHERE id = ?
     """, (diagnosis_id,))
@@ -148,20 +246,29 @@ def get_diagnosis_by_id(diagnosis_id: int) -> Optional[Dict[str, Any]]:
     return None
 
 
-def delete_diagnosis(diagnosis_id: int) -> bool:
+def delete_diagnosis(diagnosis_id: int, user_id: str = None) -> bool:
     """
     Delete a diagnosis record by ID.
     
     Args:
         diagnosis_id: The ID of the record to delete
+        user_id: If provided, only delete if owned by this user
         
     Returns:
-        True if deleted, False if not found
+        True if deleted, False if not found or not owned
     """
     conn = get_connection()
     cursor = conn.cursor()
     
-    cursor.execute("DELETE FROM diagnosis_history WHERE id = ?", (diagnosis_id,))
+    if user_id:
+        # Verify ownership before deleting
+        cursor.execute(
+            "DELETE FROM diagnosis_history WHERE id = ? AND user_id = ?",
+            (diagnosis_id, user_id)
+        )
+    else:
+        cursor.execute("DELETE FROM diagnosis_history WHERE id = ?", (diagnosis_id,))
+    
     deleted = cursor.rowcount > 0
     
     conn.commit()
@@ -170,9 +277,12 @@ def delete_diagnosis(diagnosis_id: int) -> bool:
     return deleted
 
 
-def get_statistics() -> Dict[str, Any]:
+def get_statistics(user_id: str = None) -> Dict[str, Any]:
     """
     Get statistics about diagnosis history.
+    
+    Args:
+        user_id: Filter by user ID (optional)
     
     Returns:
         Dictionary with statistics
@@ -180,21 +290,45 @@ def get_statistics() -> Dict[str, Any]:
     conn = get_connection()
     cursor = conn.cursor()
     
-    # Total count
-    cursor.execute("SELECT COUNT(*) as total FROM diagnosis_history")
-    total = cursor.fetchone()['total']
-    
-    # Count by type
-    cursor.execute("""
-        SELECT jenis_batuk, COUNT(*) as count 
-        FROM diagnosis_history 
-        GROUP BY jenis_batuk
-    """)
-    by_type = {row['jenis_batuk']: row['count'] for row in cursor.fetchall()}
-    
-    # Average confidence
-    cursor.execute("SELECT AVG(confidence) as avg_confidence FROM diagnosis_history")
-    avg_confidence = cursor.fetchone()['avg_confidence'] or 0
+    if user_id:
+        # Total count for user
+        cursor.execute(
+            "SELECT COUNT(*) as total FROM diagnosis_history WHERE user_id = ?",
+            (user_id,)
+        )
+        total = cursor.fetchone()['total']
+        
+        # Count by type for user
+        cursor.execute("""
+            SELECT jenis_batuk, COUNT(*) as count 
+            FROM diagnosis_history 
+            WHERE user_id = ?
+            GROUP BY jenis_batuk
+        """, (user_id,))
+        by_type = {row['jenis_batuk']: row['count'] for row in cursor.fetchall()}
+        
+        # Average confidence for user
+        cursor.execute(
+            "SELECT AVG(confidence) as avg_confidence FROM diagnosis_history WHERE user_id = ?",
+            (user_id,)
+        )
+        avg_confidence = cursor.fetchone()['avg_confidence'] or 0
+    else:
+        # Total count
+        cursor.execute("SELECT COUNT(*) as total FROM diagnosis_history")
+        total = cursor.fetchone()['total']
+        
+        # Count by type
+        cursor.execute("""
+            SELECT jenis_batuk, COUNT(*) as count 
+            FROM diagnosis_history 
+            GROUP BY jenis_batuk
+        """)
+        by_type = {row['jenis_batuk']: row['count'] for row in cursor.fetchall()}
+        
+        # Average confidence
+        cursor.execute("SELECT AVG(confidence) as avg_confidence FROM diagnosis_history")
+        avg_confidence = cursor.fetchone()['avg_confidence'] or 0
     
     conn.close()
     

@@ -1,6 +1,7 @@
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, File, UploadFile, HTTPException, WebSocket, WebSocketDisconnect, Header, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import uvicorn
 import shutil
 import os
@@ -14,7 +15,11 @@ import database  # SQLite database module
 from contextlib import asynccontextmanager
 import sys
 import time
-from typing import List
+from typing import List, Optional
+
+# --- Pydantic Models ---
+class UserRegister(BaseModel):
+    user_id: str
 
 # --- WebSocket Connection Manager ---
 class ConnectionManager:
@@ -191,13 +196,49 @@ async def health_check():
         "medicines_loaded": len(MEDICINES) > 0
     }
 
+# --- User Endpoints ---
+
+@app.post("/users")
+async def register_user(data: UserRegister):
+    """Register a new user or get existing user."""
+    try:
+        user = database.create_or_get_user(data.user_id)
+        return {
+            "status": "success",
+            "user": user
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+
+@app.get("/users/{user_id}")
+async def get_user(user_id: str):
+    """Get user information by ID."""
+    try:
+        user = database.get_user(user_id)
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found")
+        return {
+            "status": "success",
+            "user": user
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+
 # --- API Endpoints ---
 
 
 @app.post("/predict")
-async def predict_cough(file: UploadFile = File(...)):
+async def predict_cough(
+    file: UploadFile = File(...),
+    user_id: Optional[str] = None  # Query parameter - simple and reliable
+):
     print(f"--- [BACKEND] Received request: /predict ---")
     print(f"--- [BACKEND] File name: {file.filename} ---")
+    print(f"--- [BACKEND] User ID from query param: {user_id} ---")
 
     if not model:
         print("--- [BACKEND] ERROR: Model not loaded! ---")
@@ -258,20 +299,22 @@ async def predict_cough(file: UploadFile = File(...)):
         # RAG / Recommendation Logic
         recommendations = MEDICINES.get(label, [])
         
-        # Save diagnosis to database
+        # Save diagnosis to database with user_id
         try:
             diagnosis_id = database.save_diagnosis(
                 jenis_batuk=label,
                 confidence=confidence,
                 tingkat_kondisi=level,
-                rekomendasi_obat=recommendations
+                rekomendasi_obat=recommendations,
+                user_id=user_id  # Use query param user_id
             )
-            print(f"--- [BACKEND] Saved diagnosis to database with ID: {diagnosis_id} ---")
+            print(f"--- [BACKEND] Saved diagnosis to database with ID: {diagnosis_id} for user: {user_id} ---")
             
             # Broadcast to all WebSocket clients
             await manager.broadcast({
                 "type": "new_diagnosis",
                 "diagnosis_id": diagnosis_id,
+                "user_id": user_id,
                 "data": {
                     "jenis_batuk": label,
                     "confidence": confidence,
@@ -314,10 +357,15 @@ async def predict_cough(file: UploadFile = File(...)):
 # --- History Endpoints ---
 
 @app.get("/history")
-async def get_history(limit: int = 50):
-    """Get diagnosis history, most recent first."""
+async def get_history(
+    limit: int = 50,
+    x_user_id: Optional[str] = Header(None, alias="x-user-id")
+):
+    """Get diagnosis history, most recent first. Filters by user if X-User-ID header provided."""
+    print(f"--- [BACKEND] /history called, user_id from header: {x_user_id} ---", file=sys.stderr)
     try:
-        history = database.get_all_diagnoses(limit=limit)
+        history = database.get_all_diagnoses(limit=limit, user_id=x_user_id)
+        print(f"--- [BACKEND] Returning {len(history)} records ---", file=sys.stderr)
         return {
             "status": "success",
             "count": len(history),
@@ -345,17 +393,21 @@ async def get_diagnosis_detail(diagnosis_id: int):
 
 
 @app.delete("/history/{diagnosis_id}")
-async def delete_diagnosis(diagnosis_id: int):
-    """Delete a diagnosis record by ID."""
+async def delete_diagnosis(
+    diagnosis_id: int,
+    x_user_id: Optional[str] = Header(None, alias="x-user-id")
+):
+    """Delete a diagnosis record by ID. Verifies ownership if X-User-ID provided."""
     try:
-        deleted = database.delete_diagnosis(diagnosis_id)
+        deleted = database.delete_diagnosis(diagnosis_id, user_id=x_user_id)
         if not deleted:
-            raise HTTPException(status_code=404, detail="Diagnosis not found")
+            raise HTTPException(status_code=404, detail="Diagnosis not found or not owned by user")
         
         # Broadcast deletion to all WebSocket clients
         await manager.broadcast({
             "type": "diagnosis_deleted",
-            "diagnosis_id": diagnosis_id
+            "diagnosis_id": diagnosis_id,
+            "user_id": x_user_id
         })
         
         return {
@@ -369,10 +421,12 @@ async def delete_diagnosis(diagnosis_id: int):
 
 
 @app.get("/statistics")
-async def get_statistics():
-    """Get diagnosis statistics."""
+async def get_statistics(
+    x_user_id: Optional[str] = Header(None, alias="x-user-id")
+):
+    """Get diagnosis statistics. Filters by user if X-User-ID header provided."""
     try:
-        stats = database.get_statistics()
+        stats = database.get_statistics(user_id=x_user_id)
         return {
             "status": "success",
             "statistics": stats
