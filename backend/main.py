@@ -114,9 +114,8 @@ async def lifespan(app: FastAPI):
         # We prioritize local project files so updates are reflected immediately
         model_paths_to_try = [
              os.path.join(project_root, "cough_classifier_final.keras"), # 0. Model terbaru (PRIORITAS UTAMA)
-             os.path.join(project_root, "final_cough_model.keras"),      # 1. Model lama sebagai fallback
-             model_file_path,                                            # 2. Downloaded model in backend/
-             os.path.join(base_dir, "temp_model_zipped.keras"),          # 3. Cached zip in backend/
+             model_file_path,                                            # 1. Downloaded model in backend/
+             os.path.join(base_dir, "temp_model_zipped.keras"),          # 2. Cached zip in backend/
         ]
         
         load_path = None
