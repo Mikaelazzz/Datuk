@@ -55,7 +55,6 @@ class _SplashScreenState extends State<SplashScreen>
     // Check if user has seen landing page before
     final prefs = await SharedPreferences.getInstance();
     _isFirstTime = !(prefs.getBool(_hasSeenLandingKey) ?? false);
-    print('[SplashScreen] Is first time user: $_isFirstTime');
 
     // Initialize user service
     try {
@@ -63,9 +62,7 @@ class _SplashScreenState extends State<SplashScreen>
       await UserService.initialize();
       _userInitialized = true;
       setState(() => _statusText = 'Siap!');
-      print('[SplashScreen] User initialized: ${UserService.userId}');
     } catch (e) {
-      print('[SplashScreen] User initialization failed: $e');
       setState(() => _statusText = 'Lanjutkan...');
       _userInitialized = true; // Continue anyway
     }
@@ -97,11 +94,6 @@ class _SplashScreenState extends State<SplashScreen>
   void _checkAndNavigate() {
     // Only navigate when BOTH progress is complete AND user is initialized
     if (_progressComplete && _userInitialized) {
-      print(
-        '[SplashScreen] Both conditions met, navigating. User ID: ${UserService.userId}',
-      );
-      print('[SplashScreen] First time user: $_isFirstTime');
-
       if (_isFirstTime) {
         // First time: Show landing page, then mark as seen
         _navigateToLanding();

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'api_service.dart';
 
@@ -42,7 +41,6 @@ class WebSocketService {
 
     try {
       final wsUrl = _wsUrl;
-      debugPrint('WebSocket: Connecting to $wsUrl');
 
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
 
@@ -52,23 +50,19 @@ class WebSocketService {
           _handleMessage(data);
         },
         onError: (error) {
-          debugPrint('WebSocket error: $error');
           _handleDisconnect();
         },
         onDone: () {
-          debugPrint('WebSocket connection closed');
           _handleDisconnect();
         },
       );
 
       _isConnected = true;
       _reconnectAttempts = 0;
-      debugPrint('WebSocket: Connected successfully');
 
       // Start ping timer to keep connection alive
       _startPingTimer();
     } catch (e) {
-      debugPrint('WebSocket: Connection failed - $e');
       _scheduleReconnect();
     }
   }
@@ -76,17 +70,11 @@ class WebSocketService {
   void _handleMessage(dynamic data) {
     try {
       final message = jsonDecode(data as String) as Map<String, dynamic>;
-      debugPrint('WebSocket received: ${message['type']}');
 
       // Broadcast to all listeners
       _eventController.add(message);
     } catch (e) {
-      // Handle pong response
-      if (data == 'pong') {
-        debugPrint('WebSocket: Received pong');
-      } else {
-        debugPrint('WebSocket: Failed to parse message - $e');
-      }
+      // Handle pong response - silently ignore
     }
   }
 
@@ -103,7 +91,7 @@ class WebSocketService {
         try {
           _channel!.sink.add('ping');
         } catch (e) {
-          debugPrint('WebSocket: Ping failed - $e');
+          // Ping failed - will reconnect on next cycle
         }
       }
     });
@@ -116,14 +104,12 @@ class WebSocketService {
 
   void _scheduleReconnect() {
     if (_reconnectAttempts >= _maxReconnectAttempts) {
-      debugPrint('WebSocket: Max reconnect attempts reached');
       return;
     }
 
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(_reconnectDelay, () {
       _reconnectAttempts++;
-      debugPrint('WebSocket: Reconnecting... (attempt $_reconnectAttempts)');
       connect();
     });
   }
@@ -135,7 +121,6 @@ class WebSocketService {
     _channel?.sink.close();
     _channel = null;
     _isConnected = false;
-    debugPrint('WebSocket: Disconnected');
   }
 
   /// Dispose the service

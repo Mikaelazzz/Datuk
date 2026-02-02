@@ -52,13 +52,13 @@ class ResultScreen extends StatelessWidget {
 
                         const SizedBox(height: 32),
 
-                        // Recommendations Section
-                        _buildRecommendationsSection(context, isDark),
+                        // Warning Box
+                        _buildWarningBox(isDark),
 
                         const SizedBox(height: 16),
 
-                        // Warning Box
-                        _buildWarningBox(isDark),
+                        // Recommendations Section
+                        _buildRecommendationsSection(context, isDark),
 
                         // Bottom spacing for footer buttons - increased from 160
                         const SizedBox(height: 120),

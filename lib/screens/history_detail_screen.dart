@@ -35,6 +35,10 @@ class HistoryDetailScreen extends StatelessWidget {
                     _buildDiagnosisCard(isDark),
                     const SizedBox(height: 24),
 
+                    // Warning Box
+                    _buildWarningBox(isDark),
+                    const SizedBox(height: 24),
+
                     // Stats Section
                     _buildStatsSection(isDark),
                     const SizedBox(height: 24),
@@ -51,12 +55,6 @@ class HistoryDetailScreen extends StatelessWidget {
                     // Health Tips Section
                     const SizedBox(height: 24),
                     _buildHealthTipsSection(isDark),
-
-                    // Warning Box
-                    const SizedBox(height: 24),
-                    _buildWarningBox(isDark),
-
-                    const SizedBox(height: 100),
                   ],
                 ),
               ),

@@ -42,9 +42,6 @@ class UserService {
       // Generate new UUID
       storedUserId = const Uuid().v4();
       await prefs.setString(_userIdKey, storedUserId);
-      print('[UserService] Generated new user ID: $storedUserId');
-    } else {
-      print('[UserService] Found existing user ID: $storedUserId');
     }
 
     _userId = storedUserId;
@@ -52,9 +49,7 @@ class UserService {
     // Register with backend (will get existing if already registered)
     try {
       await _registerWithBackend(storedUserId);
-      print('[UserService] User registered/verified with backend');
     } catch (e) {
-      print('[UserService] Warning: Failed to register with backend: $e');
       // Continue anyway - will retry on next API call
     }
 
@@ -103,6 +98,5 @@ class UserService {
     await prefs.remove(_userCreatedAtKey);
     _userId = null;
     _isInitialized = false;
-    print('[UserService] User data cleared');
   }
 }
