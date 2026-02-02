@@ -56,13 +56,7 @@ manager = ConnectionManager()
 
 # Global variables for model
 model = None
-MODEL_PATH = "final_cough_model.keras" # It's in the same folder if we run from backend/ ? No, user said ../ 
-# Wait, user file structure:
-# backend/main.py
-# final_cough_model.keras is in PROJECT ROOT (Datuk/) based on list_dir
-# So backend/../final_cough_model.keras is correct relative to main.py?
-# backend/main.py -> dirname is backend/.  ../ is Datuk/
-# YES.
+MODEL_PATH = "cough_classifier_final.keras"  # Model terbaru di project root
 
 
 # Constants
@@ -117,11 +111,12 @@ async def lifespan(app: FastAPI):
                 raise
         
         # Possible model locations (in order of priority)
+        # We prioritize local project files so updates are reflected immediately
         model_paths_to_try = [
-            model_file_path,  # 1. Downloaded model in backend/
-            os.path.join(base_dir, "temp_model_zipped.keras"),  # 2. Cached zip in backend/
-            os.path.join(project_root, "final_cough_model.keras"),  # 3. .keras file in root
-            os.path.join(project_root, "final_cough_model"),  # 4. Directory in root
+             os.path.join(project_root, "cough_classifier_final.keras"), # 0. Model terbaru (PRIORITAS UTAMA)
+             os.path.join(project_root, "final_cough_model.keras"),      # 1. Model lama sebagai fallback
+             model_file_path,                                            # 2. Downloaded model in backend/
+             os.path.join(base_dir, "temp_model_zipped.keras"),          # 3. Cached zip in backend/
         ]
         
         load_path = None
@@ -130,18 +125,32 @@ async def lifespan(app: FastAPI):
                 if os.path.isdir(path):
                     # It's a directory, need to zip it for Keras
                     print(f"Model is a directory: {path}", file=sys.stderr)
+                    # We use a specific zip name for each directory to avoid conflicts if needed, 
+                    # but for now reusing temp_model_zipped is fine as long as we overwrite it 
+                    # OR we can just zip it to a temp path.
+                    # Let's verify if the existing zip is fresh? No, simplest is to re-zip if it's a folder.
+                    
+                    # Optimization: Only re-zip if the directory is newer than the zip? 
+                    # For safety in this "fix" phase, let's just zip it.
+                    
                     temp_zip_path = os.path.join(base_dir, "temp_model_zipped.keras")
                     
-                    if not os.path.exists(temp_zip_path):
-                        print("Zipping model to temporary file...", file=sys.stderr)
-                        zip_base = os.path.join(base_dir, "temp_model_zipped")
-                        shutil.make_archive(zip_base, 'zip', path)
+                    # Always re-create zip from directory to ensure we get the latest changes
+                    print(f"Zipping model directory to {temp_zip_path}...", file=sys.stderr)
+                    zip_base = os.path.join(base_dir, "temp_model_zipped")
+                    shutil.make_archive(zip_base, 'zip', path)
+                    # shutil.make_archive creates .zip, so prompt needs rename
+                    if os.path.exists(zip_base + ".zip"):
+                        if os.path.exists(temp_zip_path):
+                            os.remove(temp_zip_path)
                         os.rename(zip_base + ".zip", temp_zip_path)
                     
                     load_path = temp_zip_path
                 else:
                     load_path = path
-                print(f"Found model at: {load_path}", file=sys.stderr)
+                print(f"Found model at: {path}", file=sys.stderr)
+                if load_path != path:
+                     print(f"Loading via temporary zip: {load_path}", file=sys.stderr)
                 break
         
         if load_path is None:
@@ -230,6 +239,10 @@ async def get_user(user_id: str):
 
 # --- API Endpoints ---
 
+
+@app.get("/")
+def read_root():
+    return {"status": "ok", "message": "Datuk Backend is Running"}
 
 @app.post("/predict")
 async def predict_cough(
