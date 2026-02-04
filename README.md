@@ -52,7 +52,7 @@ lib/
 
 1. **Clone the repository** (if applicable) or navigate to the project directory:
    ```bash
-   cd "e:\Back up data D\Project\Datuk\datuk"
+   cd "..\datuk"
    ```
 
 2. **Install dependencies**:
